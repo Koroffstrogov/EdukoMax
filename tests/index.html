@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>EdukoMax — Tests</title>
+    <style>
+      * { box-sizing: border-box; }
+      body { font-family: system-ui, sans-serif; margin: 0; padding: 2rem; background: #f8fafc; color: #1e293b; }
+      h1 { margin-top: 0; }
+      .results-pass { background: #dcfce7; border: 2px solid #16a34a; border-radius: 8px; padding: 1.5rem; }
+      .results-fail { background: #fee2e2; border: 2px solid #dc2626; border-radius: 8px; padding: 1.5rem; }
+      .error-list { list-style: none; padding: 0; }
+      .error-list li { margin-bottom: 1rem; padding: 1rem; background: white; border-radius: 6px; border: 1px solid #fca5a5; }
+      .error-list pre { margin: 0.5rem 0 0; white-space: pre-wrap; font-size: 0.85rem; color: #991b1b; }
+      #test-results { margin-top: 1.5rem; }
+    </style>
+  </head>
+  <body>
+    <h1>EdukoMax — Suite de tests</h1>
+    <p>Tests exécutés dans le navigateur via modules ES.</p>
+    <div id="test-results">
+      <p>Exécution en cours...</p>
+    </div>
+    <script type="module">
+      import { runTests } from "./test-runner.js";
+      import "./storage.test.js";
+      import "./multiplication-generator.test.js";
+      import "./progress-engine.test.js";
+      import "./mastery-engine.test.js";
+      import "./reward-engine.test.js";
+
+      runTests();
+    </script>
+  </body>
+</html>

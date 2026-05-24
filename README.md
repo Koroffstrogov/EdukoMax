@@ -6,89 +6,128 @@ enfantine et lisible pour des enfants de 7 à 8 ans.
 
 ## Lancer l'application
 
-Aucune installation n'est nécessaire.
+L'application utilise des modules ES et nécessite un serveur local.
 
-### Ouvrir le fichier
+### Serveur local
 
-Ouvrir directement `index.html` dans un navigateur moderne.
+```bash
+python -m http.server 8000
+```
+
+Puis ouvrir <http://127.0.0.1:8000/> dans un navigateur moderne.
+
+### Pourquoi pas `file://` ?
+
+Les navigateurs bloquent les imports ES modules depuis le protocole `file://`.
+L'application affiche un message d'aide si elle détecte ce protocole.
+
+## Lancer les tests
+
+Les tests sont exécutés dans le navigateur, sans framework ni dépendance :
+
+```bash
+python -m http.server 8000
+```
+
+Puis ouvrir <http://127.0.0.1:8000/tests/index.html>.
+
+Les résultats s'affichent à l'écran avec le nombre de tests réussis/échoués.
 
 ## Utilisation actuelle
 
-L'application contient pour l'instant:
+L'application contient :
 
-- un écran d'accueil;
-- un écran de réglages;
-- une boutique du module Multiplications;
-- un écran de session Multiplications de 8 questions;
-- un choix de modes d'exercices;
-- une boutique de thèmes;
-- une sauvegarde locale avec `localStorage`;
-- un moteur de progression pour les multiplications;
-- un générateur de questions de multiplication;
+- un écran d'accueil ;
+- un écran de réglages ;
+- une boutique du module Multiplications ;
+- un écran de session Multiplications de 8 questions ;
+- un choix de modes d'exercices ;
+- une boutique de thèmes ;
+- une sauvegarde locale avec `localStorage` ;
+- un moteur de progression pour les multiplications ;
+- un générateur de questions de multiplication ;
 - un système de pièces gagnées avec les bonnes réponses.
-
-Les vrais collectibles décoratifs ne sont pas encore implémentés.
 
 ## Progression multiplication
 
 Les tables disponibles vont de 2 à 10.
 
-Tables débloquées au départ:
+Tables débloquées au départ :
 
 - 2
 - 5
 - 10
 
-Ordre de déblocage en boutique:
+Ordre de déblocage en boutique :
 
 ```txt
 2, 5, 10 -> 3 -> 4 -> 6 -> 8 -> 9 -> 7 -> mode mélange
 ```
 
 Chaque multiplication est suivie individuellement avec un identifiant comme
-`6x7`. La progression garde notamment:
+`6x7`. La progression garde notamment :
 
-- le nombre d'essais;
-- le nombre de réussites;
-- le nombre d'erreurs;
-- la série actuelle;
-- la meilleure série;
-- les derniers résultats;
-- la date de dernière réponse;
-- le temps moyen de réponse;
-- le score de maîtrise;
+- le nombre d'essais ;
+- le nombre de réussites ;
+- le nombre d'erreurs ;
+- la série actuelle ;
+- la meilleure série ;
+- les derniers résultats ;
+- la date de dernière réponse ;
+- le temps moyen de réponse ;
+- le score de maîtrise ;
 - les points de table gagnés avec les bonnes réponses.
 
 ## Boutique et pièces
 
-Chaque bonne réponse donne:
+Chaque bonne réponse donne :
 
-- `+1 pièce`;
+- `+1 pièce` ;
 - `+1 point` sur la table travaillée.
 
 Les pièces se dépensent dans la boutique. Les points de table restent gardés
 pour débloquer les tables suivantes.
 
-Coûts principaux:
+Coûts principaux :
 
-- table 3: 6 points sur les tables 2, 5 ou 10, puis 6 pièces;
-- table 4: 6 points sur la table 3, puis 6 pièces;
-- table 6: 8 points sur la table 4, puis 8 pièces;
-- table 8: 8 points sur la table 6, puis 8 pièces;
-- table 9: 10 points sur la table 8, puis 10 pièces;
-- table 7: 10 points sur la table 9, puis 10 pièces.
+- table 3 : 6 points sur les tables 2, 5 ou 10, puis 6 pièces ;
+- table 4 : 6 points sur la table 3, puis 6 pièces ;
+- table 6 : 8 points sur la table 4, puis 8 pièces ;
+- table 8 : 8 points sur la table 6, puis 8 pièces ;
+- table 9 : 10 points sur la table 8, puis 10 pièces ;
+- table 7 : 10 points sur la table 9, puis 10 pièces.
 
 Les modes et thèmes s'achètent aussi avec les pièces.
 
+### Audit boutique — achats vs progression
+
+Éléments qui peuvent être achetés librement (cosmétiques) :
+
+- thèmes (Soleil, Océan, Fruits) ;
+- modes bonus (Choix rapide, Groupes visuels, Facteur caché) ;
+- futurs collectibles et effets visuels.
+
+Éléments qui nécessitent une progression pédagogique :
+
+- **tables** : l'achat requiert déjà des points gagnés sur des tables
+  prérequises (ex: table 3 requiert 6 points sur les tables 2/5/10). Cela
+  garantit que l'enfant a pratiqué avant de débloquer la suite ;
+- **mode mélange** : requiert que les 4 modes de base soient possédés et au
+  moins 3 tables débloquées.
+
+Le système actuel est **cohérent** : les tables ne sont pas achetables sans
+prérequis pédagogiques. Le coût en pièces ajoute une couche supplémentaire
+de motivation sans court-circuiter la progression.
+
 ## Modes d'exercices
 
-Les modes sont affichés en cartes et se débloquent séparément:
+Les modes sont affichés en cartes et se débloquent séparément :
 
-- `direct-answer`: réponse directe, disponible au départ;
-- `multiple-choice`: choix parmi 4 réponses;
-- `visual-groups`: groupes visuels simples;
-- `missing-factor`: facteur manquant;
-- `mixed`: mélange des modes achetés.
+- `direct-answer` : réponse directe, disponible au départ ;
+- `multiple-choice` : choix parmi 4 réponses ;
+- `visual-groups` : groupes visuels simples ;
+- `missing-factor` : facteur manquant ;
+- `mixed` : mélange des modes achetés.
 
 La sélection des questions privilégie les multiplications peu vues, ratées ou
 anciennes, afin d'éviter un hasard pur.
@@ -98,12 +137,12 @@ anciennes, afin d'éviter un hasard pur.
 Depuis l'accueil, ouvrir `Multiplications`, puis choisir un mode possédé avec
 le bouton `Jouer`.
 
-Une session contient 8 questions courtes. Après chaque réponse:
+Une session contient 8 questions courtes. Après chaque réponse :
 
-- la progression de la multiplication concernée est mise à jour;
+- la progression de la multiplication concernée est mise à jour ;
 - une bonne réponse affiche une petite animation de victoire, ajoute 1 pièce,
-  puis passe automatiquement à la question suivante;
-- une mauvaise réponse affiche un feedback aidant avec une explication simple;
+  puis passe automatiquement à la question suivante ;
+- une mauvaise réponse affiche un feedback aidant avec une explication simple ;
 - le bouton `Continuer` est utilisé uniquement après une erreur.
 
 À la fin de la session, l'application affiche un résumé avec le nombre de
@@ -112,30 +151,18 @@ ensuite sauvegardé localement.
 
 ## Sauvegarde locale
 
-La sauvegarde utilise `localStorage` avec la clé:
+La sauvegarde utilise `localStorage` avec la clé :
 
 ```txt
 edukomax.save.v1
 ```
 
-Pour repartir de zéro depuis la console du navigateur:
+Pour repartir de zéro depuis la console du navigateur :
 
 ```js
 localStorage.removeItem("edukomax.save.v1");
 location.reload();
 ```
-
-## Tests rapides dans l'application
-
-Ouvrir directement `index.html`, puis vérifier:
-
-- l'écran d'accueil s'affiche;
-- la carte `Multiplications` ouvre le module;
-- `Jouer` sur un mode possédé affiche une première question;
-- une bonne réponse ajoute une pièce et passe automatiquement à la suite;
-- une mauvaise réponse affiche une explication et le bouton `Continuer`;
-- un achat de table, mode ou thème est sauvegardé;
-- en fin de session, le compteur `Sessions terminées` augmente.
 
 ## Structure du projet
 
@@ -166,21 +193,37 @@ js/
   progress-engine.js
   reward-engine.js
   multiplication-feedback.js
+tests/
+  index.html
+  test-runner.js
+  test-utils.js
+  storage.test.js
+  multiplication-generator.test.js
+  progress-engine.test.js
+  mastery-engine.test.js
+  reward-engine.test.js
 ```
 
 ## Rôle des modules JavaScript
 
-- `app.js`: démarrage de l'application, événements et rendu de la route active.
-- `router.js`: navigation simple par hash.
-- `state.js`: état en mémoire.
-- `storage.js`: lecture, validation et écriture `localStorage`.
-- `theme-manager.js`: application des thèmes.
-- `reward-engine.js`: gains, achats, prérequis de boutique et possessions.
-- `multiplication-data.js`: tables, facts et métadonnées pédagogiques.
-- `multiplication-generator.js`: génération des questions.
-- `mastery-engine.js`: calculs de maîtrise et priorités.
-- `progress-engine.js`: enregistrement des réponses.
-- `multiplication-feedback.js`: messages positifs ou aidants après réponse.
+- `app.js` : démarrage de l'application, événements et rendu de la route active.
+- `router.js` : navigation simple par hash.
+- `state.js` : état en mémoire.
+- `storage.js` : lecture, validation et écriture `localStorage`.
+- `theme-manager.js` : application des thèmes.
+- `reward-engine.js` : gains, achats, prérequis de boutique et possessions.
+- `multiplication-data.js` : tables, facts et métadonnées pédagogiques.
+- `multiplication-generator.js` : génération des questions.
+- `mastery-engine.js` : calculs de maîtrise et priorités.
+- `progress-engine.js` : enregistrement des réponses.
+- `multiplication-feedback.js` : messages positifs ou aidants après réponse.
+
+## Limites actuelles
+
+- **Fractions** : socle réservé, pas encore implémenté.
+- **Équations** : socle réservé, pas encore implémenté.
+- **Collectibles** : pas encore implémentés (cosmétiques décoratifs).
+- **Tests** : couverture des moteurs métier uniquement ; pas de tests d'intégration UI.
 
 ## Règles de développement
 
@@ -195,17 +238,11 @@ js/
 
 ## Vérification avant livraison
 
-Avant de terminer une modification:
+Vérifier que :
 
-```powershell
-Get-ChildItem 'js' -Filter '*.js' -Recurse | ForEach-Object {
-  '{0}: {1} lignes' -f $_.Name, (Get-Content $_.FullName | Measure-Object -Line).Lines
-}
-```
-
-Vérifier aussi que:
-
-- l'application charge sans erreur console;
-- la sauvegarde `localStorage` fonctionne;
-- l'interface reste lisible en largeur desktop et tablette;
-- la logique de jeu reste séparée du rendu.
+- l'application charge sans erreur console ;
+- les tests passent via `tests/index.html` ;
+- la sauvegarde `localStorage` fonctionne ;
+- l'interface reste lisible en largeur desktop et tablette ;
+- la logique de jeu reste séparée du rendu ;
+- aucun fichier JS ne dépasse 400 lignes.
