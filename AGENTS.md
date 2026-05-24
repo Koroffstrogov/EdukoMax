@@ -16,7 +16,7 @@ Future scopes:
 - No framework.
 - No build step unless explicitly requested.
 - No external dependency unless explicitly approved.
-- The app must run by opening `index.html` or through a simple local static server.
+- The app must run by opening `index.html` directly.
 - Use `localStorage` for persistence.
 - Maximum 400 lines per JavaScript file.
 - Prefer many small focused modules over large files.

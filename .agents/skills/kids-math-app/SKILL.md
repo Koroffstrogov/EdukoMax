@@ -8,7 +8,7 @@ description: Build, modify, or review EdukoMax, a vanilla HTML/CSS/ES module edu
 ## Workflow
 
 - Read `AGENTS.md` and the existing module shape before editing.
-- Keep the app runnable by opening `index.html` directly or through a simple static server.
+- Keep the app runnable by opening `index.html` directly.
 - Preserve vanilla HTML, CSS, and JavaScript. Do not add frameworks, build steps, or dependencies unless the user explicitly approves them.
 - Choose small, focused ES modules. Keep every JavaScript file under 400 lines.
 - Update `README.md` when behavior, setup, or gameplay changes.

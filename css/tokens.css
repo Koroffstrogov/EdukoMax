@@ -1,0 +1,43 @@
+:root {
+  color-scheme: light;
+  --font-family: "Segoe UI", "Atkinson Hyperlegible", Arial, sans-serif;
+  --color-bg: #f7fbff;
+  --color-bg-strong: #e8f4ff;
+  --color-surface: #ffffff;
+  --color-surface-soft: #f3f8ff;
+  --color-ink: #20304a;
+  --color-muted: #64748b;
+  --color-line: #d7e3f2;
+  --color-primary: #2563eb;
+  --color-primary-ink: #ffffff;
+  --color-secondary: #14b8a6;
+  --color-accent: #f97316;
+  --color-success: #16a34a;
+  --color-warning: #facc15;
+  --shadow-soft: 0 16px 40px rgba(32, 48, 74, 0.12);
+  --shadow-button: 0 8px 18px rgba(37, 99, 235, 0.18);
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --font-xs: 0.78rem;
+  --font-sm: 0.9rem;
+  --font-md: 1rem;
+  --font-lg: 1.25rem;
+  --font-xl: 1.65rem;
+  --font-xxl: 2.35rem;
+  --touch-target: 48px;
+  --transition-fast: 160ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --transition-fast: 1ms linear;
+  }
+}
