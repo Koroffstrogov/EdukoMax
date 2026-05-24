@@ -1,4 +1,5 @@
 import { getSessionAccuracy } from "../games/multiplication-session.js";
+import { renderRewardReveal } from "../collectibles/reward-reveal.js";
 
 export function renderMultiplicationSessionView(state) {
   const session = state.activeSession;
@@ -8,7 +9,7 @@ export function renderMultiplicationSessionView(state) {
   }
 
   if (session.isComplete && !session.currentFeedback) {
-    return renderSessionSummary(session);
+    return renderSessionSummary(session, state.sessionRewards);
   }
 
   return `
@@ -36,7 +37,11 @@ function renderMissingSession() {
   `;
 }
 
-function renderSessionSummary(session) {
+function renderSessionSummary(session, sessionRewards) {
+  const rewardHtml = sessionRewards
+    ? renderRewardReveal(sessionRewards.cards || [], sessionRewards.badges || [], sessionRewards.bonusCoins || 0)
+    : "";
+
   return `
     <section class="session-grid" aria-labelledby="summary-title">
       <div class="question-panel">
@@ -50,9 +55,10 @@ function renderSessionSummary(session) {
           <strong>${getSessionAccuracy(session)}%</strong>
           <span>de réussite sur cette session</span>
         </div>
+        ${rewardHtml}
         <div class="action-row">
           <button class="button button-primary" type="button" data-start-session="${session.modeId}">
-            Refaire une session
+            Rejouer pour tenter une nouvelle carte
           </button>
           <button class="button button-secondary" type="button" data-end-session>
             Retour au module

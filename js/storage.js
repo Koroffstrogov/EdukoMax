@@ -53,17 +53,10 @@ export function clearSave() {
 
 export function createDefaultSave() {
   const now = new Date().toISOString();
-
   return {
     version: CURRENT_VERSION,
-    profile: {
-      name: "Explorateur",
-      createdAt: now
-    },
-    settings: {
-      theme: "sunny",
-      reducedMotion: false
-    },
+    profile: { name: "Explorateur", createdAt: now },
+    settings: { theme: "sunny", reducedMotion: false },
     progress: {
       multiplication: {
         unlockedTables: [...INITIAL_UNLOCKED_TABLES],
@@ -72,25 +65,23 @@ export function createDefaultSave() {
         tablePoints: normalizeTablePoints({}),
         facts: {}
       },
-      fractions: {
-        unlocked: false
-      },
-      equations: {
-        unlocked: false
-      }
+      fractions: { unlocked: false },
+      equations: { unlocked: false }
     },
     rewards: {
-      xp: 0,
-      stars: 0,
-      coins: 0,
-      totalCoinsEarned: 0,
+      xp: 0, stars: 0, coins: 0, totalCoinsEarned: 0,
       ownedThemes: [...INITIAL_OWNED_THEMES],
-      purchases: [],
-      collectibles: []
+      purchases: [], collectibles: []
     },
-    sessions: {
-      completed: 0,
-      lastPlayedAt: null
+    sessions: { completed: 0, lastPlayedAt: null },
+    collectibles: {
+      cards: { owned: [], newlyUnlocked: [] },
+      badges: { owned: [], newlyUnlocked: [] },
+      showcase: { featuredCardIds: [], featuredBadgeIds: [] }
+    },
+    stats: {
+      sessionsCompleted: 0, totalCorrectAnswers: 0,
+      totalQuestionsAnswered: 0, perfectSessions: 0, bestGlobalStreak: 0
     },
     updatedAt: now
   };
@@ -128,6 +119,8 @@ function normalizeSave(saveData) {
     progress: normalizeProgress(saveData.progress, defaultSave.progress),
     rewards: normalizeRewards(saveData.rewards, defaultSave.rewards, settings.theme),
     sessions: normalizeSessions(saveData.sessions, defaultSave.sessions),
+    collectibles: normalizeCollectiblesSection(saveData.collectibles),
+    stats: normalizeStatsSection(saveData.stats, saveData.sessions),
     updatedAt: normalizeString(saveData.updatedAt, defaultSave.updatedAt)
   };
 }
@@ -339,6 +332,64 @@ function normalizeNullableString(value) {
 
 function clampScore(value) {
   return Number.isFinite(value) ? Math.max(0, Math.min(100, Math.round(value))) : 0;
+}
+
+function normalizeCollectiblesSection(collectibles) {
+  if (!isPlainObject(collectibles)) {
+    return {
+      cards: { owned: [], newlyUnlocked: [] },
+      badges: { owned: [], newlyUnlocked: [] },
+      showcase: { featuredCardIds: [], featuredBadgeIds: [] }
+    };
+  }
+  return {
+    cards: normalizeIdPair(collectibles.cards),
+    badges: normalizeIdPair(collectibles.badges),
+    showcase: normalizeShowcaseSection(collectibles.showcase)
+  };
+}
+
+function normalizeIdPair(section) {
+  if (!isPlainObject(section)) {
+    return { owned: [], newlyUnlocked: [] };
+  }
+  return {
+    owned: normalizeStringArray(section.owned),
+    newlyUnlocked: normalizeStringArray(section.newlyUnlocked)
+  };
+}
+
+function normalizeShowcaseSection(showcase) {
+  if (!isPlainObject(showcase)) {
+    return { featuredCardIds: [], featuredBadgeIds: [] };
+  }
+  return {
+    featuredCardIds: normalizeStringArray(showcase.featuredCardIds),
+    featuredBadgeIds: normalizeStringArray(showcase.featuredBadgeIds)
+  };
+}
+
+function normalizeStatsSection(stats, sessions) {
+  if (!isPlainObject(stats)) {
+    return {
+      sessionsCompleted: normalizeCount(sessions?.completed),
+      totalCorrectAnswers: 0,
+      totalQuestionsAnswered: 0,
+      perfectSessions: 0,
+      bestGlobalStreak: 0
+    };
+  }
+  return {
+    sessionsCompleted: normalizeCount(stats.sessionsCompleted),
+    totalCorrectAnswers: normalizeCount(stats.totalCorrectAnswers),
+    totalQuestionsAnswered: normalizeCount(stats.totalQuestionsAnswered),
+    perfectSessions: normalizeCount(stats.perfectSessions),
+    bestGlobalStreak: normalizeCount(stats.bestGlobalStreak)
+  };
+}
+
+function normalizeStringArray(arr) {
+  return Array.isArray(arr) ? arr.filter((item) => typeof item === "string" && item.length > 0) : [];
 }
 
 function isPlainObject(value) {

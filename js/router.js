@@ -2,6 +2,7 @@ export const ROUTES = Object.freeze({
   home: "home",
   multiplication: "multiplication",
   multiplicationSession: "multiplication-session",
+  collection: "collection",
   settings: "settings"
 });
 

@@ -1,0 +1,416 @@
+/* Collection screen */
+.collection-screen {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: var(--space-5);
+}
+
+.collection-header {
+  margin-bottom: var(--space-5);
+}
+
+.collection-header h1 {
+  margin: var(--space-2) 0;
+}
+
+/* Progress bar */
+.collection-progress {
+  position: relative;
+  height: 24px;
+  background: var(--color-bg-strong);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-top: var(--space-3);
+}
+
+.collection-progress__bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
+  border-radius: 12px;
+  transition: width var(--transition-fast);
+}
+
+.collection-progress__label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-xs);
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+/* Filters */
+.collection-filters {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-5);
+}
+
+.collection-filter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--font-sm);
+}
+
+.collection-filter select {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-line);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-size: var(--font-sm);
+  min-height: var(--touch-target);
+}
+
+/* Sections */
+.collection-section {
+  margin-bottom: var(--space-6);
+}
+
+.collection-section h2 {
+  margin-bottom: var(--space-3);
+}
+
+.collection-count {
+  font-size: var(--font-sm);
+  color: var(--color-muted);
+  font-weight: 400;
+}
+
+/* Card grid */
+.collection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--space-3);
+}
+
+.collection-grid--badges {
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+}
+
+.collection-empty {
+  color: var(--color-muted);
+  font-style: italic;
+}
+
+/* Collectible card */
+.collectible-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-4) var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  border: 2px solid var(--color-line);
+  text-align: center;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.collectible-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-soft);
+}
+
+.collectible-card__emoji {
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
+.collectible-card__name {
+  font-weight: 600;
+  font-size: var(--font-sm);
+  color: var(--color-ink);
+}
+
+.collectible-card__title {
+  font-size: var(--font-xs);
+  color: var(--color-muted);
+}
+
+.collectible-card__hint {
+  font-size: var(--font-xs);
+  color: var(--color-muted);
+  font-style: italic;
+}
+
+.collectible-card__rarity {
+  font-size: var(--font-xs);
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-top: var(--space-1);
+}
+
+/* Rarity variants */
+.collectible-card--common {
+  border-color: var(--color-line);
+}
+
+.collectible-card--common .collectible-card__rarity {
+  background: var(--color-bg-strong);
+  color: var(--color-muted);
+}
+
+.collectible-card--rare {
+  border-color: #6366f1;
+  background: linear-gradient(180deg, var(--color-surface) 60%, #eef2ff);
+}
+
+.collectible-card--rare .collectible-card__rarity {
+  background: #6366f1;
+  color: #fff;
+}
+
+.collectible-card--epic {
+  border-color: #a855f7;
+  background: linear-gradient(180deg, var(--color-surface) 60%, #faf5ff);
+}
+
+.collectible-card--epic .collectible-card__rarity {
+  background: #a855f7;
+  color: #fff;
+}
+
+.collectible-card--mastery {
+  border-color: #eab308;
+  background: linear-gradient(180deg, var(--color-surface) 60%, #fefce8);
+}
+
+.collectible-card--mastery .collectible-card__rarity {
+  background: #eab308;
+  color: #fff;
+}
+
+/* Locked state */
+.collectible-card--locked {
+  opacity: 0.6;
+  filter: grayscale(0.5);
+}
+
+.collectible-card--locked:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+/* New badge on cards */
+.collectible-card--new {
+  animation: card-appear 0.4s ease-out;
+}
+
+.collectible-card__new-badge,
+.badge-card__new-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: var(--color-accent);
+  color: #fff;
+  font-size: var(--font-xs);
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 8px;
+}
+
+@keyframes card-appear {
+  from {
+    opacity: 0;
+    transform: scale(0.8) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .collectible-card--new {
+    animation: none;
+  }
+}
+
+/* Badge card */
+.badge-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  border: 2px solid var(--color-line);
+  text-align: center;
+}
+
+.badge-card__emoji {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.badge-card__name {
+  font-weight: 600;
+  font-size: var(--font-sm);
+}
+
+.badge-card__desc,
+.badge-card__hint {
+  font-size: var(--font-xs);
+  color: var(--color-muted);
+}
+
+.badge-card--locked {
+  opacity: 0.5;
+  filter: grayscale(0.6);
+}
+
+.badge-card--new {
+  animation: card-appear 0.4s ease-out;
+}
+
+/* Reward reveal */
+.reward-reveal {
+  margin-top: var(--space-5);
+  padding: var(--space-5);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-soft);
+  border: 2px solid var(--color-secondary);
+  text-align: center;
+}
+
+.reward-reveal__title {
+  font-size: var(--font-lg);
+  margin-bottom: var(--space-3);
+}
+
+.reward-reveal__items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  justify-content: center;
+  margin-bottom: var(--space-3);
+}
+
+.reward-reveal__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  border: 2px solid var(--color-line);
+  min-width: 100px;
+  animation: card-appear 0.5s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reward-reveal__item {
+    animation: none;
+  }
+}
+
+.reward-reveal__item--rare {
+  border-color: #6366f1;
+}
+
+.reward-reveal__item--epic {
+  border-color: #a855f7;
+}
+
+.reward-reveal__item--mastery {
+  border-color: #eab308;
+}
+
+.reward-reveal__item--badge {
+  border-color: var(--color-secondary);
+}
+
+.reward-reveal__item--coins {
+  border-color: var(--color-accent);
+}
+
+.reward-reveal__emoji {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.reward-reveal__name {
+  font-weight: 600;
+  font-size: var(--font-sm);
+}
+
+.reward-reveal__rarity {
+  font-size: var(--font-xs);
+  color: var(--color-muted);
+}
+
+.reward-reveal__message {
+  font-size: var(--font-md);
+  font-weight: 500;
+  margin-bottom: var(--space-3);
+  color: var(--color-ink);
+}
+
+.reward-reveal__actions {
+  margin-top: var(--space-3);
+}
+
+/* Showcase (home screen) */
+.showcase {
+  margin-top: var(--space-4);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-soft);
+  text-align: center;
+}
+
+.showcase__cards {
+  display: flex;
+  gap: var(--space-2);
+  justify-content: center;
+  margin: var(--space-2) 0;
+}
+
+.showcase__card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  border: 2px solid var(--color-line);
+  font-size: 1.5rem;
+}
+
+.showcase__card--rare {
+  border-color: #6366f1;
+}
+
+.showcase__card--epic {
+  border-color: #a855f7;
+}
+
+.showcase__card--mastery {
+  border-color: #eab308;
+}
+
+/* Motivation message */
+.collection-motivation {
+  text-align: center;
+  font-size: var(--font-md);
+  color: var(--color-muted);
+  padding: var(--space-4) 0;
+}
+
+/* Button small variant */
+.button-sm {
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-sm);
+  min-height: 36px;
+}
