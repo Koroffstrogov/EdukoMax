@@ -83,6 +83,7 @@ function handleAppClick(event, root) {
   const startTarget = event.target.closest("[data-start-session]");
 
   if (startTarget) {
+    clearSessionRewards();
     startMultiplicationSession(startTarget.dataset.startSession);
     saveGame(getSaveSnapshot());
     navigate(ROUTES.multiplicationSession);
