@@ -2,6 +2,7 @@ import { loadSave, saveGame } from "./storage.js";
 import {
   advanceActiveSession,
   buyShopItem,
+  clearSessionRewards,
   endActiveSession,
   getActiveTheme,
   getSaveSnapshot,
@@ -9,6 +10,7 @@ import {
   initializeState,
   startMultiplicationSession,
   submitMultiplicationAnswer,
+  updateCollectionFilter,
   updateRoute,
   updateTheme
 } from "./state.js";
@@ -20,6 +22,7 @@ import {
   renderMultiplicationSessionView
 } from "./screens/multiplication-session-screen.js";
 import { renderSettingsView } from "./screens/settings-screen.js";
+import { renderCollectionScreen } from "./screens/collection-screen.js";
 
 let autoAdvanceTimer = null;
 
@@ -38,6 +41,7 @@ function startApp() {
 
   root.addEventListener("click", (event) => handleAppClick(event, root));
   root.addEventListener("submit", (event) => handleAppSubmit(event, root));
+  root.addEventListener("change", (event) => handleAppChange(event, root));
   startRouter((route) => {
     updateRoute(route);
     renderApp(root);
@@ -102,6 +106,7 @@ function handleAppClick(event, root) {
 
   if (event.target.closest("[data-end-session]")) {
     endActiveSession();
+    clearSessionRewards();
     saveGame(getSaveSnapshot());
     navigate(ROUTES.multiplication);
     renderApp(root);
@@ -124,6 +129,15 @@ function handleAppSubmit(event, root) {
 
   event.preventDefault();
   submitAnswerForm(answerForm, root);
+}
+
+function handleAppChange(event, root) {
+  const filterSelect = event.target.closest("[data-collection-filter]");
+
+  if (filterSelect) {
+    updateCollectionFilter(filterSelect.dataset.collectionFilter, filterSelect.value);
+    renderApp(root);
+  }
 }
 
 function submitAnswerForm(form, root) {
@@ -197,6 +211,7 @@ function renderHeader(state) {
       <nav class="topnav" aria-label="Navigation principale">
         ${renderNavButton("Accueil", ROUTES.home, state.route)}
         ${renderNavButton("Multiplications", ROUTES.multiplication, state.route)}
+        ${renderNavButton("Collection", ROUTES.collection, state.route)}
         ${renderNavButton("Réglages", ROUTES.settings, state.route)}
       </nav>
     </header>
@@ -221,6 +236,10 @@ function renderCurrentView(state) {
 
   if (state.route === ROUTES.multiplication) {
     return renderMultiplicationView(state);
+  }
+
+  if (state.route === ROUTES.collection) {
+    return renderCollectionScreen(state);
   }
 
   if (state.route === ROUTES.settings) {
@@ -262,6 +281,10 @@ function getPageTitle(route) {
 
   if (route === ROUTES.multiplicationSession) {
     return "Session multiplications - EdukoMax";
+  }
+
+  if (route === ROUTES.collection) {
+    return "Collection - EdukoMax";
   }
 
   return "EdukoMax";

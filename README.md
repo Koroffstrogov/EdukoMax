@@ -43,6 +43,8 @@ L'application contient :
 - un écran de session Multiplications de 8 questions ;
 - un choix de modes d'exercices ;
 - une boutique de thèmes ;
+- un système de collectibles (cartes & badges) ;
+- un écran Collection avec filtres et progression ;
 - une sauvegarde locale avec `localStorage` ;
 - un moteur de progression pour les multiplications ;
 - un générateur de questions de multiplication ;
@@ -173,6 +175,7 @@ css/
   base.css
   layout.css
   components.css
+  collection.css
   themes.css
 js/
   app.js
@@ -186,7 +189,14 @@ js/
     home-screen.js
     multiplication-screen.js
     multiplication-session-screen.js
+    collection-screen.js
     settings-screen.js
+  collectibles/
+    collectible-data.js
+    collectible-engine.js
+    badge-engine.js
+    collection-renderer.js
+    reward-reveal.js
   multiplication-data.js
   multiplication-generator.js
   mastery-engine.js
@@ -202,6 +212,8 @@ tests/
   progress-engine.test.js
   mastery-engine.test.js
   reward-engine.test.js
+  collectible-engine.test.js
+  badge-engine.test.js
 ```
 
 ## Rôle des modules JavaScript
@@ -212,6 +224,11 @@ tests/
 - `storage.js` : lecture, validation et écriture `localStorage`.
 - `theme-manager.js` : application des thèmes.
 - `reward-engine.js` : gains, achats, prérequis de boutique et possessions.
+- `collectibles/collectible-data.js` : définitions statiques de cartes et badges.
+- `collectibles/collectible-engine.js` : logique de gain de cartes après session.
+- `collectibles/badge-engine.js` : évaluation et attribution des badges.
+- `collectibles/collection-renderer.js` : rendu grille de la collection.
+- `collectibles/reward-reveal.js` : affichage des récompenses en fin de session.
 - `multiplication-data.js` : tables, facts et métadonnées pédagogiques.
 - `multiplication-generator.js` : génération des questions.
 - `mastery-engine.js` : calculs de maîtrise et priorités.
@@ -222,8 +239,35 @@ tests/
 
 - **Fractions** : socle réservé, pas encore implémenté.
 - **Équations** : socle réservé, pas encore implémenté.
-- **Collectibles** : pas encore implémentés (cosmétiques décoratifs).
 - **Tests** : couverture des moteurs métier uniquement ; pas de tests d'intégration UI.
+
+## Système de collectibles
+
+### Cartes
+
+76 cartes réparties en 10 univers thématiques (un par table + mode mix).
+Chaque table possède 4 communes, 2 rares, 1 épique et 1 carte maîtrise.
+
+Raretés : `common`, `rare`, `epic`, `mastery`.
+
+### Attribution des cartes après session
+
+- Toujours au moins une chance de carte commune ;
+- Si accuracy ≥ 75 %, chance de carte rare ;
+- Si accuracy ≥ 90 % ou session parfaite, chance d'épique ;
+- Carte maîtrise attribuée automatiquement quand une table est maîtrisée ;
+- Maximum 3 cartes par session ;
+- Si aucune nouvelle carte disponible, bonus de 2 pièces.
+
+### Badges
+
+20 badges liés aux exploits : première session, séries, sessions parfaites,
+cartes rares/épiques, sessions cumulées, tables maîtrisées.
+
+### Écran Collection
+
+Route `#/collection`. Affiche cartes et badges avec filtres par table et
+rareté, barre de progression, et messages motivants.
 
 ## Règles de développement
 

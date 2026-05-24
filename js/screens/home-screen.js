@@ -1,9 +1,12 @@
 import { getAvailableThemes } from "../theme-manager.js";
+import { renderShowcase } from "../collectibles/reward-reveal.js";
+import { getCollectionStats } from "../collectibles/collectible-engine.js";
 
 export function renderHomeView(state) {
   const profileName = escapeHtml(state.save.profile.name);
   const themeLabel = getThemeLabel(state.save.settings.theme);
   const unlockedTables = state.save.progress.multiplication.unlockedTables;
+  const collectionStats = getCollectionStats(state.save);
 
   return `
     <section class="dashboard-grid" aria-labelledby="home-title">
@@ -19,11 +22,12 @@ export function renderHomeView(state) {
             <button class="button button-primary" type="button" data-route="multiplication">
               Ouvrir les multiplications
             </button>
-            <button class="button button-secondary" type="button" data-route="settings">
-              Choisir l'ambiance
+            <button class="button button-secondary" type="button" data-route="collection">
+              Ma collection (${collectionStats.percent}%)
             </button>
           </div>
         </section>
+        ${renderShowcase(state.save)}
         ${renderSubjectGrid()}
       </div>
       <aside class="panel" aria-labelledby="status-title">
@@ -34,6 +38,7 @@ export function renderHomeView(state) {
           <li><span>Tables prêtes</span><strong>${unlockedTables.join(", ")}</strong></li>
           <li><span>Thème actif</span><strong>${themeLabel}</strong></li>
           <li><span>Sessions terminées</span><strong>${state.save.sessions.completed}</strong></li>
+          <li><span>Collection</span><strong>${collectionStats.ownedCards} cartes</strong></li>
         </ul>
       </aside>
     </section>
