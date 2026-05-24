@@ -1,0 +1,7 @@
+interface:
+  display_name: "Kids Math App"
+  short_description: "Build EdukoMax math practice features"
+  default_prompt: "Use $kids-math-app to build or refine an EdukoMax math practice feature."
+
+policy:
+  allow_implicit_invocation: true
