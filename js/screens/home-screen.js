@@ -16,7 +16,7 @@ export function renderHomeView(state) {
           <h1 id="home-title">Bonjour ${profileName}</h1>
           <p>
             Gagne des pièces avec tes bonnes réponses, puis complète ta
-            collection de tables, de modes et d'ambiances.
+            collection de tables et d'ambiances.
           </p>
           <div class="action-row">
             <button class="button button-primary" type="button" data-route="multiplication">
@@ -34,7 +34,7 @@ export function renderHomeView(state) {
         <p class="eyebrow">Progression</p>
         <h2 id="status-title">Tableau de bord</h2>
         <ul class="status-list">
-          <li><span>Pièces</span><strong>${state.save.rewards.coins}</strong></li>
+          <li><span>Pièces</span><strong>🪙 ${state.save.rewards.coins}</strong></li>
           <li><span>Tables prêtes</span><strong>${unlockedTables.join(", ")}</strong></li>
           <li><span>Thème actif</span><strong>${themeLabel}</strong></li>
           <li><span>Sessions terminées</span><strong>${state.save.sessions.completed}</strong></li>

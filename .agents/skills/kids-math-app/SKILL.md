@@ -48,6 +48,8 @@ description: Build, modify, or review EdukoMax, a vanilla HTML/CSS/ES module edu
 
 - Check that the app loads without console errors.
 - Verify `localStorage` save and load behavior after persistence changes.
+- For profile, menu, shop, and selection UI, verify that visible controls are actually actionable: selecting an existing item must apply immediately when specified, edit controls must persist, and creation flows should be behind a clearly separate button when requested.
+- Avoid broad delegated selectors that can match global app state attributes. For example, `html[data-theme]` means `event.target.closest("[data-theme]")` catches almost every click; use scoped selectors such as `button[data-theme]` or a dedicated action attribute.
 - Check desktop and tablet-width layouts.
 - Check JavaScript file lengths after edits.
 - Confirm new gameplay rules remain separate from rendering and persistence.

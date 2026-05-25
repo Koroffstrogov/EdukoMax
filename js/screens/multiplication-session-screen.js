@@ -19,7 +19,7 @@ export function renderMultiplicationSessionView(state) {
         ${renderQuestion(session.currentQuestion)}
         ${renderAnswerArea(session)}
       </div>
-      ${renderSessionAside(session)}
+      ${renderSessionAside(session, state.save.rewards.coins)}
     </section>
   `;
 }
@@ -173,9 +173,14 @@ function renderFeedback(session) {
   `;
 }
 
-function renderSessionAside(session) {
+function renderSessionAside(session, coins) {
   return `
     <aside class="panel" aria-labelledby="session-stats-title">
+      <div class="coin-pill" aria-label="Pièces disponibles">
+        <span aria-hidden="true">🪙</span>
+        <strong>${coins}</strong>
+        <span>pièces</span>
+      </div>
       <p class="eyebrow">En cours</p>
       <h2 id="session-stats-title">${getModeLabel(session.modeId)}</h2>
       <ul class="status-list">

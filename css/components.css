@@ -173,8 +173,146 @@ button.subject-card:hover,
   white-space: nowrap;
 }
 
+.coin-pill--header {
+  min-height: 48px;
+  padding: var(--space-2) var(--space-3);
+  background: color-mix(in srgb, var(--color-warning) 22%, white);
+}
+
+.coin-pill--large {
+  min-width: 144px;
+  justify-content: center;
+  font-size: var(--font-lg);
+}
+
+.coin-pill--bump {
+  animation: coin-pulse 520ms ease both;
+}
+
 .coin-pill span:first-child {
   color: var(--color-warning);
+}
+
+.profile-area {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.profile-trigger,
+.profile-delete {
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-weight: 900;
+  box-shadow: var(--shadow-button);
+}
+
+.profile-trigger {
+  width: 52px;
+  height: 52px;
+  font-size: var(--font-xl);
+}
+
+.profile-delete {
+  width: 40px;
+  height: 40px;
+  color: var(--color-primary);
+  font-size: var(--font-lg);
+}
+
+.profile-popover {
+  position: absolute;
+  top: calc(100% + var(--space-3));
+  right: 0;
+  z-index: 20;
+  display: grid;
+  gap: var(--space-4);
+  width: min(92vw, 380px);
+  padding: var(--space-4);
+  border: 1px solid color-mix(in srgb, var(--color-line) 76%, white);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: 0 24px 70px rgba(32, 48, 74, 0.2);
+}
+
+.profile-section {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.profile-list,
+.profile-form,
+.profile-create-box {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.profile-create-box [hidden] {
+  display: none;
+}
+
+.profile-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.profile-select {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: var(--space-2);
+  align-items: center;
+  min-height: 52px;
+  padding: var(--space-2) var(--space-3);
+  border: 2px solid transparent;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-soft);
+  color: var(--color-ink);
+  text-align: left;
+}
+
+.profile-row.is-active .profile-select {
+  border-color: var(--color-secondary);
+  background: color-mix(in srgb, var(--color-secondary) 12%, white);
+}
+
+.profile-select small {
+  color: var(--color-muted);
+  font-weight: 900;
+}
+
+.profile-form label {
+  display: grid;
+  gap: var(--space-1);
+  color: var(--color-muted);
+  font-weight: 900;
+}
+
+.profile-form input,
+.profile-form select {
+  min-height: 48px;
+  padding: var(--space-2) var(--space-3);
+  border: 2px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font: inherit;
+  font-weight: 800;
+}
+
+.shop-message {
+  padding: var(--space-4);
+  border: 2px solid color-mix(in srgb, var(--color-secondary) 55%, white);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-secondary) 14%, white);
+  color: var(--color-ink);
+  font-weight: 900;
+  box-shadow: var(--shadow-soft);
+  animation: victory-pop 680ms ease both;
 }
 
 .shop-card {
@@ -187,6 +325,12 @@ button.subject-card:hover,
 
 .shop-card.is-owned {
   border-color: color-mix(in srgb, var(--color-secondary) 52%, white);
+}
+
+.shop-card.is-locked {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.84)),
+    linear-gradient(135deg, var(--color-primary), var(--color-warning));
 }
 
 .shop-card h3 {
@@ -203,8 +347,8 @@ button.subject-card:hover,
 
 .table-token {
   display: grid;
-  width: 52px;
-  height: 52px;
+  width: 60px;
+  height: 60px;
   place-items: center;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
@@ -518,7 +662,9 @@ button.subject-card:active {
   }
 
   .feedback-card--success,
-  .victory-burst {
+  .victory-burst,
+  .coin-pill--bump,
+  .shop-message {
     animation: none;
   }
 }
@@ -544,6 +690,21 @@ button.subject-card:active {
 
   100% {
     transform: rotate(0deg) scale(1);
+  }
+}
+
+@keyframes coin-pulse {
+  0% {
+    transform: scale(1);
+  }
+
+  45% {
+    transform: scale(1.12);
+    box-shadow: 0 12px 28px rgba(250, 204, 21, 0.34);
+  }
+
+  100% {
+    transform: scale(1);
   }
 }
 

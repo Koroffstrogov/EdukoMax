@@ -23,7 +23,7 @@ export function renderSettingsView(state) {
       </div>
       <aside class="panel" aria-labelledby="wallet-title">
         <p class="eyebrow">Porte-pièces</p>
-        <h2 id="wallet-title">${shop.coins} pièces</h2>
+        <h2 id="wallet-title">🪙 ${shop.coins}</h2>
         <ul class="status-list">
           <li><span>Bonnes réponses</span><strong>${shop.totalCorrect}</strong></li>
           <li><span>Thèmes possédés</span><strong>${countOwned(themes)}</strong></li>

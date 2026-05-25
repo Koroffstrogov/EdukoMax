@@ -6,7 +6,8 @@ enfantine et lisible pour des enfants de 7 à 8 ans.
 
 ## Lancer l'application
 
-L'application utilise des modules ES et nécessite un serveur local.
+L'application utilise des modules ES et se lance uniquement depuis un serveur
+local. L'ouverture directe en `file://` n'est pas un mode supporté.
 
 ### Serveur local
 
@@ -16,10 +17,10 @@ python -m http.server 8000
 
 Puis ouvrir <http://127.0.0.1:8000/> dans un navigateur moderne.
 
-### Pourquoi pas `file://` ?
+### Si `index.html` est ouvert directement
 
-Les navigateurs bloquent les imports ES modules depuis le protocole `file://`.
-L'application affiche un message d'aide si elle détecte ce protocole.
+L'application affiche un message indiquant de démarrer un serveur local, puis de
+recharger la page via `http://127.0.0.1:8000/`.
 
 ## Lancer les tests
 
@@ -39,20 +40,52 @@ L'application contient :
 
 - un écran d'accueil ;
 - un écran de réglages ;
-- une boutique du module Multiplications ;
+- une gestion de profils sans mot de passe ;
+- un écran Multiplications avec mondes de tables achetables ;
 - un écran de session Multiplications de 8 questions ;
-- un choix de modes d'exercices ;
+- tous les modes d'exercices de multiplication disponibles dès le début ;
 - une boutique de thèmes ;
 - un système de collectibles (cartes & badges) ;
 - un écran Collection avec filtres et progression ;
 - une sauvegarde locale avec `localStorage` ;
 - un moteur de progression pour les multiplications ;
 - un générateur de questions de multiplication ;
-- un système de pièces gagnées avec les bonnes réponses.
+- un système de pièces gagnées avec les bonnes réponses, visible sur les écrans
+  principaux.
+
+## Profils utilisateurs
+
+EdukoMax peut gérer plusieurs profils d'enfants sur le même navigateur, sans
+mot de passe. L'icône en haut à droite ouvre le panneau des profils.
+
+Chaque profil stocke ses propres données :
+
+- pseudo ;
+- icône ;
+- thème favori ;
+- progression des multiplications ;
+- tables achetées ;
+- pièces ;
+- thèmes possédés ;
+- sessions ;
+- cartes et badges de collection ;
+- statistiques.
+
+Depuis le panneau des profils, il est possible de choisir un profil existant en
+un clic, de modifier le profil actif et de supprimer un profil. Les choix
+d'icône et de thème favori du profil actif s'appliquent immédiatement.
+
+La création est séparée du reste du panneau : le formulaire apparaît depuis le
+bouton `Nouveau profil`, puis permet de choisir pseudo, icône et thème favori.
+
+Quand un profil est choisi, l'application recharge immédiatement la progression,
+les pièces, les achats, la collection et le thème de ce profil. Une session en
+cours est arrêtée pour éviter d'écrire une réponse dans le mauvais profil.
 
 ## Progression multiplication
 
-Les tables disponibles vont de 2 à 10.
+Les tables disponibles vont de 2 à 10. Toutes les tables sont visibles dès le
+début comme des mondes à collectionner.
 
 Tables débloquées au départ :
 
@@ -60,11 +93,15 @@ Tables débloquées au départ :
 - 5
 - 10
 
-Ordre de déblocage en boutique :
+Tables verrouillées au départ mais achetables immédiatement avec des pièces :
 
 ```txt
-2, 5, 10 -> 3 -> 4 -> 6 -> 8 -> 9 -> 7 -> mode mélange
+3, 4, 6, 8, 9, 7
 ```
+
+Il n'y a pas de prérequis de maîtrise, de niveau ou de table précédente pour
+acheter une table verrouillée. L'enfant économise ses pièces et choisit le monde
+qu'il veut ouvrir.
 
 Chaque multiplication est suivie individuellement avec un identifiant comme
 `6x7`. La progression garde notamment :
@@ -80,6 +117,14 @@ Chaque multiplication est suivie individuellement avec un identifiant comme
 - le score de maîtrise ;
 - les points de table gagnés avec les bonnes réponses.
 
+La progression sert à afficher un état pédagogique :
+
+- Pas encore essayée ;
+- En découverte ;
+- En progrès ;
+- Presque maîtrisée ;
+- Maîtrisée.
+
 ## Boutique et pièces
 
 Chaque bonne réponse donne :
@@ -87,63 +132,49 @@ Chaque bonne réponse donne :
 - `+1 pièce` ;
 - `+1 point` sur la table travaillée.
 
-Les pièces se dépensent dans la boutique. Les points de table restent gardés
-pour débloquer les tables suivantes.
+Les pièces se dépensent pour acheter des tables et des thèmes. Les points de
+table restent comme trace de progression, mais ne bloquent aucun achat.
 
-Coûts principaux :
+Prix des tables :
 
-- table 3 : 6 points sur les tables 2, 5 ou 10, puis 6 pièces ;
-- table 4 : 6 points sur la table 3, puis 6 pièces ;
-- table 6 : 8 points sur la table 4, puis 8 pièces ;
-- table 8 : 8 points sur la table 6, puis 8 pièces ;
-- table 9 : 10 points sur la table 8, puis 10 pièces ;
-- table 7 : 10 points sur la table 9, puis 10 pièces.
+- table 3 : 40 pièces ;
+- table 4 : 50 pièces ;
+- table 6 : 60 pièces ;
+- table 8 : 70 pièces ;
+- table 9 : 80 pièces ;
+- table 7 : 90 pièces.
 
-Les modes et thèmes s'achètent aussi avec les pièces.
+Tous les modes de multiplication sont gratuits et disponibles dès le début. Les
+thèmes restent des achats cosmétiques.
 
-### Audit boutique — achats vs progression
-
-Éléments qui peuvent être achetés librement (cosmétiques) :
-
-- thèmes (Soleil, Océan, Fruits) ;
-- modes bonus (Choix rapide, Groupes visuels, Facteur caché) ;
-- futurs collectibles et effets visuels.
-
-Éléments qui nécessitent une progression pédagogique :
-
-- **tables** : l'achat requiert déjà des points gagnés sur des tables
-  prérequises (ex: table 3 requiert 6 points sur les tables 2/5/10). Cela
-  garantit que l'enfant a pratiqué avant de débloquer la suite ;
-- **mode mélange** : requiert que les 4 modes de base soient possédés et au
-  moins 3 tables débloquées.
-
-Le système actuel est **cohérent** : les tables ne sont pas achetables sans
-prérequis pédagogiques. Le coût en pièces ajoute une couche supplémentaire
-de motivation sans court-circuiter la progression.
+Le compteur de pièces est affiché dans l'en-tête, sur l'accueil, sur l'écran
+Multiplications, en session et dans les réglages. Il pulse quand le montant
+change, avec respect de `prefers-reduced-motion`.
 
 ## Modes d'exercices
 
-Les modes sont affichés en cartes et se débloquent séparément :
+Tous les modes de multiplication sont affichés en cartes et jouables dès le
+début :
 
-- `direct-answer` : réponse directe, disponible au départ ;
+- `direct-answer` : réponse directe ;
 - `multiple-choice` : choix parmi 4 réponses ;
 - `visual-groups` : groupes visuels simples ;
 - `missing-factor` : facteur manquant ;
-- `mixed` : mélange des modes achetés.
+- `mixed` : mélange des modes.
 
 La sélection des questions privilégie les multiplications peu vues, ratées ou
 anciennes, afin d'éviter un hasard pur.
 
 ## Session Multiplications
 
-Depuis l'accueil, ouvrir `Multiplications`, puis choisir un mode possédé avec
-le bouton `Jouer`.
+Depuis l'accueil, ouvrir `Multiplications`, puis choisir un mode ou un monde de
+table avec le bouton `Jouer`.
 
 Une session contient 8 questions courtes. Après chaque réponse :
 
 - la progression de la multiplication concernée est mise à jour ;
 - une bonne réponse affiche une petite animation de victoire, ajoute 1 pièce,
-  puis passe automatiquement à la question suivante ;
+  pulse le compteur, puis passe automatiquement à la question suivante ;
 - une mauvaise réponse affiche un feedback aidant avec une explication simple ;
 - le bouton `Continuer` est utilisé uniquement après une erreur.
 
@@ -158,6 +189,10 @@ La sauvegarde utilise `localStorage` avec la clé :
 ```txt
 edukomax.save.v1
 ```
+
+La sauvegarde contient une liste `profiles` et un `activeProfileId`. Les
+anciennes sauvegardes mono-profil sont migrées automatiquement vers un premier
+profil.
 
 Pour repartir de zéro depuis la console du navigateur :
 
@@ -182,6 +217,7 @@ js/
   router.js
   state.js
   storage.js
+  save-data.js
   theme-manager.js
   games/
     multiplication-session.js
@@ -189,6 +225,7 @@ js/
     home-screen.js
     multiplication-screen.js
     multiplication-session-screen.js
+    profile-panel.js
     collection-screen.js
     settings-screen.js
   collectibles/
@@ -221,9 +258,10 @@ tests/
 - `app.js` : démarrage de l'application, événements et rendu de la route active.
 - `router.js` : navigation simple par hash.
 - `state.js` : état en mémoire.
-- `storage.js` : lecture, validation et écriture `localStorage`.
+- `storage.js` : lecture et écriture `localStorage`.
+- `save-data.js` : validation, migration et modèle de sauvegarde multi-profils.
 - `theme-manager.js` : application des thèmes.
-- `reward-engine.js` : gains, achats, prérequis de boutique et possessions.
+- `reward-engine.js` : gains, achats de tables/thèmes, prix et possessions.
 - `collectibles/collectible-data.js` : définitions statiques de cartes et badges.
 - `collectibles/collectible-engine.js` : logique de gain de cartes après session.
 - `collectibles/badge-engine.js` : évaluation et attribution des badges.
@@ -234,6 +272,7 @@ tests/
 - `mastery-engine.js` : calculs de maîtrise et priorités.
 - `progress-engine.js` : enregistrement des réponses.
 - `multiplication-feedback.js` : messages positifs ou aidants après réponse.
+- `screens/profile-panel.js` : création, choix, modification et suppression des profils.
 
 ## Limites actuelles
 

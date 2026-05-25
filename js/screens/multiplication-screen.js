@@ -1,4 +1,4 @@
-import { getShopSummary } from "../reward-engine.js";
+import { SESSION_MODES, getShopSummary } from "../reward-engine.js";
 
 export function renderMultiplicationView(state) {
   const shop = getShopSummary(state.save);
@@ -6,23 +6,20 @@ export function renderMultiplicationView(state) {
   return `
     <section class="shop-hero" aria-labelledby="multiplication-title">
       <div>
-        <p class="eyebrow">Boutique des tables</p>
-        <h1 id="multiplication-title">Choisis ton mode</h1>
+        <p class="eyebrow">Aventures de multiplication</p>
+        <h1 id="multiplication-title">Choisis ton monde</h1>
         <p>
-          Gagne des pièces avec les bonnes réponses, puis débloque des tables,
-          des modes et des ambiances.
+          Tous les modes sont ouverts. Gagne des pièces dans les mondes déjà
+          disponibles, puis achète la table que tu veux.
         </p>
       </div>
-      <div class="coin-pill" aria-label="Pièces disponibles">
-        <span aria-hidden="true">●</span>
-        <strong>${shop.coins}</strong>
-        <span>pièces</span>
-      </div>
+      ${renderCoinPill(shop.coins)}
     </section>
+    ${state.shopMessage ? `<div class="shop-message" role="status">${state.shopMessage}</div>` : ""}
 
     <section aria-labelledby="modes-title">
       <div class="section-heading">
-        <p class="eyebrow">Modes</p>
+        <p class="eyebrow">Modes gratuits</p>
         <h2 id="modes-title">Missions à choisir</h2>
       </div>
       <div class="shop-grid">
@@ -32,113 +29,107 @@ export function renderMultiplicationView(state) {
 
     <section aria-labelledby="tables-title">
       <div class="section-heading">
-        <p class="eyebrow">Collectibles</p>
+        <p class="eyebrow">Mondes</p>
         <h2 id="tables-title">Tables à collectionner</h2>
       </div>
       <div class="shop-grid shop-grid--tables">
-        ${renderInitialTableCards(state)}
-        ${shop.tables.map(renderTableCard).join("")}
+        ${shop.tables.map((table) => renderTableCard(table, shop.coins)).join("")}
       </div>
     </section>
   `;
 }
 
+function renderCoinPill(coins) {
+  return `
+    <div class="coin-pill coin-pill--large" aria-label="Pièces disponibles">
+      <span aria-hidden="true">🪙</span>
+      <strong>${coins}</strong>
+      <span>pièces</span>
+    </div>
+  `;
+}
+
 function renderModeCard(mode) {
   return `
-    <article class="shop-card${mode.isOwned ? " is-owned" : ""}">
+    <article class="shop-card mode-card is-owned">
       <span class="subject-symbol" aria-hidden="true">${getModeIcon(mode.id)}</span>
       <div>
         <h3>${mode.label}</h3>
         <p>${mode.description}</p>
       </div>
-      ${renderCost(mode)}
-      ${renderModeAction(mode)}
-    </article>
-  `;
-}
-
-function renderTableCard(table) {
-  return `
-    <article class="shop-card table-card${table.isOwned ? " is-owned" : ""}">
-      <span class="table-token" aria-hidden="true">${table.table}</span>
-      <div>
-        <h3>${table.label}</h3>
-        <p>${table.description}</p>
-      </div>
-      <p class="progress-line">${table.requirementLabel}</p>
-      ${renderCost(table)}
-      ${renderBuyAction(table)}
-    </article>
-  `;
-}
-
-function renderInitialTableCards(state) {
-  return state.save.progress.multiplication.unlockedTables
-    .filter((table) => [2, 5, 10].includes(table))
-    .map((table) => `
-      <article class="shop-card table-card is-owned">
-        <span class="table-token" aria-hidden="true">${table}</span>
-        <div>
-          <h3>Table de ${table}</h3>
-          <p>Déjà dans ta collection.</p>
-        </div>
-        <span class="tag">Possédée</span>
-      </article>
-    `)
-    .join("");
-}
-
-function renderModeAction(mode) {
-  if (mode.isOwned) {
-    return `
+      <span class="tag">Gratuit</span>
       <button class="button button-primary" type="button" data-start-session="${mode.id}">
         Jouer
       </button>
-    `;
-  }
-
-  return renderBuyAction(mode);
+    </article>
+  `;
 }
 
-function renderBuyAction(item) {
-  if (item.canBuy) {
-    return `
-      <button
-        class="button button-primary"
-        type="button"
-        data-buy-type="${item.type}"
-        data-buy-id="${item.id}"
-      >
-        Acheter
-      </button>
-    `;
-  }
+function renderTableCard(table, coins) {
+  const ownedClass = table.isOwned ? " is-owned" : " is-locked";
 
   return `
-    <button class="button button-secondary" type="button" disabled>
-      ${getLockedLabel(item)}
+    <article class="shop-card table-card${ownedClass}">
+      <span class="table-token" aria-hidden="true">${table.icon}</span>
+      <div>
+        <h3>${table.label}</h3>
+        <p>Table de ${table.table}</p>
+      </div>
+      ${table.isOwned ? renderOwnedTable(table) : renderLockedTable(table, coins)}
+    </article>
+  `;
+}
+
+function renderOwnedTable(table) {
+  return `
+    <span class="tag">${table.recommendation}</span>
+    <p class="progress-line">Progression: ${table.masteryPercent}%</p>
+    <p class="progress-line">${table.progressLabel}</p>
+    <button
+      class="button button-primary"
+      type="button"
+      data-start-session="${SESSION_MODES.directAnswer}"
+      data-start-table="${table.table}"
+    >
+      Jouer
     </button>
   `;
 }
 
-function renderCost(item) {
-  if (item.cost === 0) {
-    return '<span class="tag">Gratuit</span>';
-  }
+function renderLockedTable(table, coins) {
+  const missingCoins = Math.max(0, table.price - coins);
 
-  return `<span class="tag">${item.cost} pièces</span>`;
+  return `
+    <span class="tag">🔒 À débloquer</span>
+    <p class="progress-line">Prix : ${table.price} 🪙</p>
+    <p class="progress-line">
+      ${missingCoins > 0
+        ? `Il te manque ${missingCoins} 🪙`
+        : `Débloque ce monde !`}
+    </p>
+    ${missingCoins === 0 ? renderBuyButton(table) : renderEarnButton()}
+  `;
 }
 
-function getLockedLabel(item) {
-  if (item.isOwned) {
-    return "Possédé";
-  }
+function renderBuyButton(table) {
+  return `
+    <button
+      class="button button-primary"
+      type="button"
+      data-buy-type="table"
+      data-buy-id="${table.table}"
+    >
+      Acheter
+    </button>
+  `;
+}
 
-  if (item.needsCoins) {
-    return "Pièces à gagner";
-  }
-
-  return "Verrouillé";
+function renderEarnButton() {
+  return `
+    <button class="button button-secondary" type="button" data-start-session="${SESSION_MODES.directAnswer}">
+      Gagner des pièces
+    </button>
+  `;
 }
 
 function getModeIcon(modeId) {

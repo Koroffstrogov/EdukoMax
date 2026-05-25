@@ -20,7 +20,7 @@
     <a class="skip-link" href="#main-content">Aller au contenu</a>
     <div id="app" data-app-root>
       <main class="loading-shell" aria-live="polite">
-        <p>EdukoMax se pr&eacute;pare...</p>
+        <p>EdukoMax se prépare...</p>
       </main>
     </div>
     <script type="module">
@@ -40,13 +40,9 @@
         root.innerHTML = `
           <main class="loading-shell" aria-live="polite">
             <h1>Serveur local requis</h1>
-            <p>
-              Cette application utilise des modules JavaScript.<br>
-              Elle ne peut pas fonctionner en ouvrant directement le fichier.
-            </p>
-            <p>Lancez un serveur local, par&nbsp;exemple&nbsp;:</p>
+            <p>EdukoMax doit être lancé depuis un serveur local.</p>
             <pre><code>python -m http.server 8000</code></pre>
-            <p>Puis ouvrez <a href="http://127.0.0.1:8000/">http://127.0.0.1:8000/</a></p>
+            <p>Ouvre ensuite <a href="http://127.0.0.1:8000/">http://127.0.0.1:8000/</a></p>
           </main>
         `;
       }
@@ -60,7 +56,7 @@
 
         root.innerHTML = `
           <main class="loading-shell" aria-live="polite">
-            <p>EdukoMax n&rsquo;a pas pu d&eacute;marrer. V&eacute;rifiez votre serveur local et rechargez la page.</p>
+            <p>EdukoMax n'a pas pu démarrer. Vérifie le serveur local, puis recharge la page.</p>
           </main>
         `;
         console.error(error);

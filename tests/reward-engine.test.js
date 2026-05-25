@@ -2,6 +2,9 @@ import { test } from "./test-runner.js";
 import { assert, assertEqual } from "./test-utils.js";
 import {
   applyAnswerRewards,
+  buyTable,
+  canBuyTable,
+  getTablePrice,
   purchaseShopItem,
   getShopSummary,
   isModeOwned,
@@ -37,29 +40,43 @@ test("reward: coins never become negative", () => {
   assert(result.save.rewards.coins >= 0, "coins >= 0");
 });
 
-test("reward: table purchase requires prerequisite points", () => {
+test("reward: table purchase only requires enough coins", () => {
   const save = createDefaultSave();
-  save.rewards.coins = 100; // plenty of coins
+  save.rewards.coins = 40;
 
-  // Table 3 requires 6 points on tables 2, 5, or 10
-  const result = purchaseShopItem(save, "table", "3");
-
-  // Should fail because no table points earned yet
-  assertEqual(result.ok, false, "cannot buy table 3 without prerequisite");
-  assertEqual(result.error, "requirements");
+  const result = buyTable(save, 3);
+  assertEqual(result.ok, true, "can buy table 3 immediately with enough coins");
+  assert(result.save.progress.multiplication.unlockedTables.includes(3), "table 3 unlocked");
+  assertEqual(result.save.rewards.coins, 0, "40 coins spent");
 });
 
-test("reward: table purchase succeeds with prerequisites met", () => {
+test("reward: table purchase fails without enough coins", () => {
   const save = createDefaultSave();
-  save.rewards.coins = 100;
-  // Give 6 points on tables 2, 5, 10
-  save.progress.multiplication.tablePoints = {
-    2: 3, 3: 0, 4: 0, 5: 2, 6: 0, 7: 0, 8: 0, 9: 0, 10: 1
-  };
+  save.rewards.coins = 39;
 
-  const result = purchaseShopItem(save, "table", "3");
-  assertEqual(result.ok, true, "can buy table 3 with points");
-  assert(result.save.progress.multiplication.unlockedTables.includes(3), "table 3 unlocked");
+  const result = buyTable(save, 3);
+  assertEqual(result.ok, false, "cannot buy table 3 with 39 coins");
+  assertEqual(result.error, "coins");
+  assertEqual(canBuyTable(save, 3), false);
+});
+
+test("reward: any locked table can be bought immediately", () => {
+  const save = createDefaultSave();
+  save.rewards.coins = 90;
+
+  const result = buyTable(save, 7);
+  assertEqual(result.ok, true, "table 7 has no progression prerequisite");
+  assert(result.save.progress.multiplication.unlockedTables.includes(7), "table 7 unlocked");
+  assertEqual(result.save.rewards.coins, 0, "90 coins spent");
+});
+
+test("reward: table prices are centralized", () => {
+  assertEqual(getTablePrice(3), 40);
+  assertEqual(getTablePrice(4), 50);
+  assertEqual(getTablePrice(6), 60);
+  assertEqual(getTablePrice(8), 70);
+  assertEqual(getTablePrice(9), 80);
+  assertEqual(getTablePrice(7), 90);
 });
 
 test("reward: theme purchase works with enough coins", () => {
@@ -86,24 +103,20 @@ test("reward: shop summary shows correct owned state", () => {
   const summary = getShopSummary(save);
 
   assertEqual(summary.coins, 0);
-  assert(summary.modes.some((m) => m.id === "direct-answer" && m.isOwned), "direct-answer owned");
+  assert(summary.modes.every((mode) => mode.isOwned), "all modes owned from start");
+  assert(summary.tables.some((t) => t.table === 2 && t.isOwned), "table 2 owned");
+  assert(summary.tables.some((t) => t.table === 3 && !t.isOwned && t.price === 40), "table 3 visible with price");
   assert(summary.themes.some((t) => t.id === "sunny" && t.isOwned), "sunny owned");
   assert(summary.themes.some((t) => t.id === "ocean" && !t.isOwned), "ocean not owned");
 });
 
-test("reward: unlocks are coherent with progression", () => {
-  const save = createDefaultSave();
-  save.rewards.coins = 100;
-
-  // Cannot buy table 6 directly (requires table 4 unlocked with 8 points)
-  const result = purchaseShopItem(save, "table", "6");
-  assertEqual(result.ok, false, "table 6 requires table 4 points");
-});
-
-test("reward: mode ownership check works", () => {
+test("reward: all multiplication modes are owned from start", () => {
   const progress = { unlockedModes: ["direct-answer"], mixedModeUnlocked: false };
   assert(isModeOwned(progress, "direct-answer"), "direct-answer owned");
-  assert(!isModeOwned(progress, "multiple-choice"), "multiple-choice not owned");
+  assert(isModeOwned(progress, "multiple-choice"), "multiple-choice owned");
+  assert(isModeOwned(progress, "visual-groups"), "visual-groups owned");
+  assert(isModeOwned(progress, "missing-factor"), "missing-factor owned");
+  assert(isModeOwned(progress, "mixed"), "mixed owned");
 });
 
 test("reward: theme ownership check works", () => {

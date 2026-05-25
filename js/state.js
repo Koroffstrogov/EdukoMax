@@ -13,6 +13,12 @@ import {
 import { pickCardRewards, applyCardRewards, markCollectiblesSeen } from "./collectibles/collectible-engine.js";
 import { evaluateBadges, applyBadgeRewards, updateStatsAfterSession } from "./collectibles/badge-engine.js";
 import { calculateTableMastery } from "./mastery-engine.js";
+import {
+  activateProfile,
+  addProfile,
+  removeProfile,
+  updateActiveProfileDetails
+} from "./save-data.js";
 
 const DEFAULT_ROUTE = "home";
 
@@ -21,6 +27,8 @@ const appState = {
   save: null,
   activeSession: null,
   sessionRewards: null,
+  shopMessage: null,
+  profilePanelOpen: false,
   collectionFilter: { table: "all", rarity: "all" }
 };
 
@@ -29,6 +37,8 @@ export function initializeState(saveData) {
   appState.save = cloneData(saveData);
   appState.activeSession = null;
   appState.sessionRewards = null;
+  appState.shopMessage = null;
+  appState.profilePanelOpen = false;
   appState.collectionFilter = { table: "all", rarity: "all" };
 }
 
@@ -40,6 +50,8 @@ export function getStateSnapshot() {
     save: cloneData(appState.save),
     activeSession: cloneData(appState.activeSession),
     sessionRewards: cloneData(appState.sessionRewards),
+    shopMessage: cloneData(appState.shopMessage),
+    profilePanelOpen: appState.profilePanelOpen,
     collectionFilter: { ...appState.collectionFilter }
   };
 }
@@ -56,6 +68,7 @@ export function getActiveTheme() {
 
 export function updateRoute(route) {
   appState.route = route;
+  appState.profilePanelOpen = false;
 }
 
 export function updateTheme(theme) {
@@ -66,11 +79,41 @@ export function updateTheme(theme) {
   }
 
   appState.save.settings.theme = theme;
+  appState.save.profile.favoriteTheme = theme;
   touchSave();
   return true;
 }
 
-export function startMultiplicationSession(modeId = SESSION_MODES.directAnswer) {
+export function toggleProfilePanel() {
+  ensureInitialized();
+  appState.profilePanelOpen = !appState.profilePanelOpen;
+}
+
+export function createProfile(details) {
+  ensureInitialized();
+  appState.save = addProfile(appState.save, details);
+  resetProfileSessionState();
+}
+
+export function selectProfile(profileId) {
+  ensureInitialized();
+  appState.save = activateProfile(appState.save, profileId);
+  resetProfileSessionState();
+}
+
+export function deleteProfile(profileId) {
+  ensureInitialized();
+  appState.save = removeProfile(appState.save, profileId);
+  resetProfileSessionState();
+}
+
+export function updateProfile(details) {
+  ensureInitialized();
+  appState.save = updateActiveProfileDetails(appState.save, details);
+  appState.shopMessage = null;
+}
+
+export function startMultiplicationSession(modeId = SESSION_MODES.directAnswer, table = null) {
   ensureInitialized();
   const safeModeId = isModeOwned(appState.save.progress.multiplication, modeId)
     ? modeId
@@ -78,8 +121,9 @@ export function startMultiplicationSession(modeId = SESSION_MODES.directAnswer) 
 
   appState.activeSession = createMultiplicationSession(
     appState.save.progress.multiplication,
-    { modeId: safeModeId }
+    { modeId: safeModeId, table: normalizePlayableTable(table) }
   );
+  appState.shopMessage = null;
 }
 
 export function submitMultiplicationAnswer(answerValue) {
@@ -136,7 +180,10 @@ export function buyShopItem(itemType, itemId) {
 
   if (itemType === "theme") {
     appState.save.settings.theme = itemId;
+    appState.save.profile.favoriteTheme = itemId;
   }
+
+  appState.shopMessage = buildShopMessage(itemType, result.item);
 
   touchSave();
   return cloneData(result);
@@ -192,6 +239,10 @@ function buildSessionSummary(session) {
 }
 
 function getSessionTable(session) {
+  if (session.table) {
+    return session.table;
+  }
+
   if (!session.answers || session.answers.length === 0) {
     return 2;
   }
@@ -252,9 +303,27 @@ function calculateBestStreak(answers) {
   return best;
 }
 
+function normalizePlayableTable(table) {
+  const numberTable = Number(table);
+
+  if (appState.save.progress.multiplication.unlockedTables.includes(numberTable)) {
+    return numberTable;
+  }
+
+  return null;
+}
+
+function resetProfileSessionState() {
+  appState.activeSession = null;
+  appState.sessionRewards = null;
+  appState.shopMessage = null;
+  appState.profilePanelOpen = false;
+}
+
 export function clearSessionRewards() {
   ensureInitialized();
   appState.sessionRewards = null;
+  appState.shopMessage = null;
   markCollectiblesSeen(appState.save);
 }
 
@@ -275,11 +344,23 @@ function attachRewardToFeedback(session, reward) {
     ...session,
     currentFeedback: {
       ...session.currentFeedback,
-      message: `+${reward.coins} pièce`,
+      message: `+${reward.coins} 🪙`,
       explanation: "",
       reward
     }
   };
+}
+
+function buildShopMessage(itemType, item) {
+  if (itemType === "table") {
+    return `Nouveau monde ouvert : ${item.label} ! ${item.icon}`;
+  }
+
+  if (itemType === "theme") {
+    return `Nouvelle ambiance débloquée : ${item.label} !`;
+  }
+
+  return null;
 }
 
 function touchSave() {

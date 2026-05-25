@@ -3,14 +3,19 @@ import {
   advanceActiveSession,
   buyShopItem,
   clearSessionRewards,
+  createProfile,
+  deleteProfile,
   endActiveSession,
   getActiveTheme,
   getSaveSnapshot,
   getStateSnapshot,
   initializeState,
+  selectProfile,
   startMultiplicationSession,
   submitMultiplicationAnswer,
+  toggleProfilePanel,
   updateCollectionFilter,
+  updateProfile,
   updateRoute,
   updateTheme
 } from "./state.js";
@@ -23,8 +28,10 @@ import {
 } from "./screens/multiplication-session-screen.js";
 import { renderSettingsView } from "./screens/settings-screen.js";
 import { renderCollectionScreen } from "./screens/collection-screen.js";
+import { renderProfileControls } from "./screens/profile-panel.js";
 
 let autoAdvanceTimer = null;
+let lastRenderedCoins = null;
 
 startApp();
 
@@ -58,6 +65,35 @@ function applySavedTheme() {
 }
 
 function handleAppClick(event, root) {
+  if (event.target.closest("[data-profile-toggle]")) {
+    toggleProfilePanel();
+    renderApp(root);
+    return;
+  }
+
+  const profileSelect = event.target.closest("[data-profile-select]");
+
+  if (profileSelect) {
+    selectProfile(profileSelect.dataset.profileSelect);
+    persistProfileState(root);
+    return;
+  }
+
+  const profileDelete = event.target.closest("[data-profile-delete]");
+
+  if (profileDelete) {
+    deleteProfile(profileDelete.dataset.profileDelete);
+    persistProfileState(root);
+    return;
+  }
+
+  const profileCreateToggle = event.target.closest("[data-profile-create-toggle]");
+
+  if (profileCreateToggle) {
+    toggleProfileCreatePanel(root);
+    return;
+  }
+
   const submitTarget = event.target.closest("[data-submit-answer]");
 
   if (submitTarget) {
@@ -84,7 +120,10 @@ function handleAppClick(event, root) {
 
   if (startTarget) {
     clearSessionRewards();
-    startMultiplicationSession(startTarget.dataset.startSession);
+    startMultiplicationSession(
+      startTarget.dataset.startSession,
+      startTarget.dataset.startTable
+    );
     saveGame(getSaveSnapshot());
     navigate(ROUTES.multiplicationSession);
     renderApp(root);
@@ -114,7 +153,7 @@ function handleAppClick(event, root) {
     return;
   }
 
-  const themeTarget = event.target.closest("[data-theme]");
+  const themeTarget = event.target.closest("button[data-theme]");
 
   if (themeTarget) {
     changeTheme(themeTarget.dataset.theme, root);
@@ -122,6 +161,24 @@ function handleAppClick(event, root) {
 }
 
 function handleAppSubmit(event, root) {
+  const profileCreateForm = event.target.closest("[data-profile-create-form]");
+
+  if (profileCreateForm) {
+    event.preventDefault();
+    createProfile(readProfileForm(profileCreateForm));
+    persistProfileState(root);
+    return;
+  }
+
+  const profileUpdateForm = event.target.closest("[data-profile-update-form]");
+
+  if (profileUpdateForm) {
+    event.preventDefault();
+    updateProfile(readProfileForm(profileUpdateForm));
+    persistProfileState(root);
+    return;
+  }
+
   const answerForm = event.target.closest("[data-answer-form]");
 
   if (!answerForm) {
@@ -133,6 +190,15 @@ function handleAppSubmit(event, root) {
 }
 
 function handleAppChange(event, root) {
+  const profileLiveField = event.target.closest("[data-profile-live]");
+
+  if (profileLiveField) {
+    const form = profileLiveField.closest("[data-profile-update-form]");
+    updateProfile(readProfileForm(form));
+    persistProfileState(root);
+    return;
+  }
+
   const filterSelect = event.target.closest("[data-collection-filter]");
 
   if (filterSelect) {
@@ -159,6 +225,13 @@ function submitSessionAnswer(answerValue, root) {
   submitMultiplicationAnswer(answerValue);
   saveGame(getSaveSnapshot());
   renderApp(root);
+}
+
+function persistProfileState(root) { applySavedTheme(); saveGame(getSaveSnapshot()); renderApp(root); }
+
+function toggleProfileCreatePanel(root) {
+  const panel = root.querySelector("[data-profile-create-panel]");
+  if (panel) panel.hidden = !panel.hidden;
 }
 
 function buyItem(itemType, itemId, root) {
@@ -195,8 +268,18 @@ function renderApp(root) {
       </main>
     </div>
   `;
+  lastRenderedCoins = state.save.rewards.coins;
   focusAnswerInput(root);
   scheduleAutoAdvance(root, state);
+}
+
+function readProfileForm(form) {
+  const data = new FormData(form);
+  return {
+    name: String(data.get("name") || "").trim(),
+    icon: String(data.get("icon") || ""),
+    favoriteTheme: String(data.get("favoriteTheme") || "")
+  };
 }
 
 function renderHeader(state) {
@@ -215,7 +298,22 @@ function renderHeader(state) {
         ${renderNavButton("Collection", ROUTES.collection, state.route)}
         ${renderNavButton("Réglages", ROUTES.settings, state.route)}
       </nav>
+      ${renderCoinCounter(state.save.rewards.coins)}
+      ${renderProfileControls(state)}
     </header>
+  `;
+}
+
+function renderCoinCounter(coins) {
+  const bumpClass = lastRenderedCoins !== null && lastRenderedCoins !== coins
+    ? " coin-pill--bump"
+    : "";
+
+  return `
+    <div class="coin-pill coin-pill--header${bumpClass}" aria-label="${coins} pièces">
+      <span aria-hidden="true">🪙</span>
+      <strong>${coins}</strong>
+    </div>
   `;
 }
 

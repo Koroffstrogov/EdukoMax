@@ -22,16 +22,18 @@ export function createMultiplicationSession(progress, options = {}) {
   const totalQuestions = normalizeQuestionCount(options.totalQuestions);
   const modeId = normalizeSessionMode(options.modeId);
   const modes = buildModeSequence(totalQuestions, modeId);
+  const table = normalizeSessionTable(options.table);
 
   return {
     type: "multiplication",
     modeId,
+    table,
     totalQuestions,
     currentIndex: 0,
     answeredCount: 0,
     correctCount: 0,
     answers: [],
-    currentQuestion: generateQuestion(progress, modes, 0),
+    currentQuestion: generateQuestion(progress, modes, 0, table),
     currentFeedback: null,
     isComplete: false,
     completionRecorded: false,
@@ -110,7 +112,7 @@ export function advanceMultiplicationSession(session, progress) {
   return {
     ...session,
     currentIndex: nextIndex,
-    currentQuestion: generateQuestion(progress, session.modes, nextIndex),
+    currentQuestion: generateQuestion(progress, session.modes, nextIndex, session.table),
     currentFeedback: null,
     questionStartedAt: Date.now()
   };
@@ -124,9 +126,10 @@ export function getSessionAccuracy(session) {
   return Math.round((session.correctCount / session.answeredCount) * 100);
 }
 
-function generateQuestion(progress, modes, index) {
+function generateQuestion(progress, modes, index, table) {
   return generateMultiplicationQuestion(progress, {
-    mode: modes[index] || QUESTION_MODES.directAnswer
+    mode: modes[index] || QUESTION_MODES.directAnswer,
+    table
   });
 }
 
@@ -161,6 +164,13 @@ function normalizeSessionMode(modeId) {
   return Object.values(QUESTION_MODES).includes(modeId)
     ? modeId
     : QUESTION_MODES.directAnswer;
+}
+
+function normalizeSessionTable(table) {
+  const numberTable = Number(table);
+  return Number.isInteger(numberTable) && numberTable >= 2 && numberTable <= 10
+    ? numberTable
+    : null;
 }
 
 function normalizeQuestionCount(value) {
