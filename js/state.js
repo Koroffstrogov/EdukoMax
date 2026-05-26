@@ -34,8 +34,10 @@ const appState = {
   activeSession: null,
   sessionRewards: null,
   shopMessage: null,
+  noticeMessage: null,
   profilePanelOpen: false,
-  collectionFilter: { table: "all", rarity: "all" }
+  collectionFilter: { table: "all", rarity: "all" },
+  teacherFilter: "all"
 };
 
 export function initializeState(saveData) {
@@ -44,8 +46,10 @@ export function initializeState(saveData) {
   appState.activeSession = null;
   appState.sessionRewards = null;
   appState.shopMessage = null;
+  appState.noticeMessage = null;
   appState.profilePanelOpen = false;
   appState.collectionFilter = { table: "all", rarity: "all" };
+  appState.teacherFilter = "all";
 }
 
 export function getStateSnapshot() {
@@ -57,8 +61,10 @@ export function getStateSnapshot() {
     activeSession: cloneData(appState.activeSession),
     sessionRewards: cloneData(appState.sessionRewards),
     shopMessage: cloneData(appState.shopMessage),
+    noticeMessage: cloneData(appState.noticeMessage),
     profilePanelOpen: appState.profilePanelOpen,
-    collectionFilter: { ...appState.collectionFilter }
+    collectionFilter: { ...appState.collectionFilter },
+    teacherFilter: appState.teacherFilter
   };
 }
 
@@ -75,6 +81,7 @@ export function getActiveTheme() {
 export function updateRoute(route) {
   appState.route = route;
   appState.profilePanelOpen = false;
+  appState.noticeMessage = null;
 }
 
 export function updateTheme(theme) {
@@ -112,10 +119,15 @@ export function deleteProfile(profileId) {
   resetProfileSessionState();
 }
 
-export function updateProfile(details) {
+export function updateProfile(details, options = {}) {
   ensureInitialized();
   appState.save = updateActiveProfileDetails(appState.save, details);
   appState.shopMessage = null;
+  appState.noticeMessage = options.closePanel ? "Profil enregistré !" : null;
+
+  if (options.closePanel) {
+    appState.profilePanelOpen = false;
+  }
 }
 
 export function startMultiplicationSession(modeId = SESSION_MODES.directAnswer, table = null) {
@@ -258,6 +270,7 @@ function resetProfileSessionState() {
   appState.activeSession = null;
   appState.sessionRewards = null;
   appState.shopMessage = null;
+  appState.noticeMessage = null;
   appState.profilePanelOpen = false;
 }
 
@@ -265,6 +278,7 @@ export function clearSessionRewards() {
   ensureInitialized();
   appState.sessionRewards = null;
   appState.shopMessage = null;
+  appState.noticeMessage = null;
   markCollectiblesSeen(appState.save);
 }
 
@@ -274,6 +288,13 @@ export function updateCollectionFilter(key, value) {
   if (key === "table" || key === "rarity") {
     appState.collectionFilter[key] = value;
   }
+}
+
+export function updateTeacherFilter(value) {
+  ensureInitialized();
+  appState.teacherFilter = ["all", "fragile", "review", "new", "mastered"].includes(value)
+    ? value
+    : "all";
 }
 
 function attachRewardToFeedback(session, reward) {

@@ -13,7 +13,8 @@ export function createDefaultFactProgress() {
     lastAnsweredAt: null,
     averageResponseMs: null,
     mastery: 0,
-    needsPractice: false
+    needsPractice: false,
+    modeStats: {}
   };
 }
 

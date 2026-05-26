@@ -7,11 +7,13 @@ import { renderMultiplicationSessionView } from "./multiplication-session-screen
 import { renderPremiumModesView } from "./premium-modes-screen.js";
 import { renderProfileControls } from "./profile-panel.js";
 import { renderSettingsView } from "./settings-screen.js?v=settings-guard-20260525";
+import { renderTeacherView } from "./teacher-screen.js";
 
 export function renderAppShell(state, lastRenderedCoins) {
   return `
     <div class="app-shell">
       ${renderHeader(state, lastRenderedCoins)}
+      ${renderNotice(state.noticeMessage)}
       <main id="main-content" class="app-main" tabindex="-1">
         ${renderCurrentView(state)}
       </main>
@@ -19,11 +21,18 @@ export function renderAppShell(state, lastRenderedCoins) {
   `;
 }
 
+function renderNotice(message) {
+  return message
+    ? `<div class="shop-message app-notice" role="status">${escapeHtml(message)}</div>`
+    : "";
+}
+
 export function getPageTitle(route) {
   if (route === ROUTES.settings) return "Réglages - EdukoMax";
   if (route === ROUTES.multiplication) return "Multiplications - EdukoMax";
   if (route === ROUTES.multiplicationSession) return "Session multiplications - EdukoMax";
   if (route === ROUTES.collection) return "Collection - EdukoMax";
+  if (route === ROUTES.teacher || route === ROUTES.modesScienceFacts) return "Bilan professeur - EdukoMax";
   if (route === ROUTES.modes || route.startsWith("modes/")) return "Modes spéciaux - EdukoMax";
   if (route === ROUTES.leaderboard) return "Classement - EdukoMax";
   return "EdukoMax";
@@ -46,9 +55,29 @@ function renderHeader(state, lastRenderedCoins) {
         ${renderNavButton("Collection", ROUTES.collection, state.route)}
         ${renderNavButton("Réglages", ROUTES.settings, state.route)}
       </nav>
+      ${renderTeacherButton(state.route)}
       ${renderCoinCounter(state.save.rewards.coins, lastRenderedCoins)}
       ${renderProfileControls(state)}
     </header>
+  `;
+}
+
+function renderTeacherButton(activeRoute) {
+  const active = activeRoute === ROUTES.teacher || activeRoute === ROUTES.modesScienceFacts;
+  const activeClass = active ? " is-active" : "";
+  const current = active ? ' aria-current="page"' : "";
+
+  return `
+    <button
+      class="nav-button icon-nav-button${activeClass}"
+      type="button"
+      data-route="${ROUTES.teacher}"
+      aria-label="Bilan professeur"
+      title="Bilan professeur"
+      ${current}
+    >
+      <span aria-hidden="true">📊</span>
+    </button>
   `;
 }
 
@@ -87,6 +116,16 @@ function renderCurrentView(state) {
   if (state.route === ROUTES.modesCompetitive) return renderPremiumModesView(state, "competitive");
   if (state.route === ROUTES.modesChill) return renderPremiumModesView(state, "chill");
   if (state.route === ROUTES.modesScience) return renderPremiumModesView(state, "science");
+  if (state.route === ROUTES.teacher || state.route === ROUTES.modesScienceFacts) return renderTeacherView(state);
   if (state.route === ROUTES.leaderboard) return renderLeaderboardView(state);
   return renderHomeView(state);
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }

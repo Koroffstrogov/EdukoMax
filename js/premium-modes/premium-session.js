@@ -69,7 +69,9 @@ export function answerPremiumSession(session, progress, answerValue) {
   const answerDetails = {
     value: Number(answerValue),
     responseMs,
-    answeredAt: new Date().toISOString()
+    answeredAt: new Date().toISOString(),
+    modeId: session.modeId,
+    questionMode: session.currentQuestion.mode
   };
   const result = recordMultiplicationAnswer(progress, session.currentQuestion, answerDetails);
   const feedback = createPremiumFeedback(session, answerDetails, result.isCorrect);

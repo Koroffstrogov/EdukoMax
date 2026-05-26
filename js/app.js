@@ -19,6 +19,7 @@ import {
   updateCollectionFilter,
   updateProfile,
   updateRoute,
+  updateTeacherFilter,
   updateTheme
 } from "./state.js";
 import { navigate, ROUTES, startRouter } from "./router.js";
@@ -111,6 +112,14 @@ function handleAppClick(event, root) {
     return;
   }
 
+  const teacherFilterTarget = event.target.closest("[data-teacher-filter]");
+
+  if (teacherFilterTarget) {
+    updateTeacherFilter(teacherFilterTarget.dataset.teacherFilter);
+    renderApp(root);
+    return;
+  }
+
   const routeTarget = event.target.closest("[data-route]");
 
   if (routeTarget) {
@@ -193,7 +202,7 @@ function handleAppSubmit(event, root) {
 
   if (profileUpdateForm) {
     event.preventDefault();
-    updateProfile(readProfileForm(profileUpdateForm));
+    updateProfile(readProfileForm(profileUpdateForm), { closePanel: true });
     persistProfileState(root);
     return;
   }

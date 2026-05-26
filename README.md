@@ -48,6 +48,7 @@ L'application contient :
 - une boutique de thèmes ;
 - un système de collectibles (cartes & badges) ;
 - un écran Collection avec filtres et progression ;
+- un écran Bilan professeur pour repérer les multiplications difficiles ;
 - une sauvegarde locale avec `localStorage` ;
 - un moteur de progression pour les multiplications ;
 - un générateur de questions de multiplication ;
@@ -238,6 +239,7 @@ Routes disponibles :
 - `#modes/competitive` : Défis Champions ;
 - `#modes/chill` : Mode Détente ;
 - `#modes/science` : Coach Mémoire ;
+- `#modes/science/facts` : ouvre le bilan professeur avec le panneau Coach Mémoire ;
 - `#leaderboard` : classement local compétitif.
 
 ### Défis Champions
@@ -271,6 +273,38 @@ Modes inclus :
 - `clever-mix` : Mix Malin, mélange de facts proches ou confusables.
 
 Le coach utilise uniquement les tables débloquées du profil actif.
+Depuis l'écran Coach Mémoire, le bouton `Voir les multiplications` ouvre le
+Bilan professeur. Le panneau Coach Mémoire y affiche les facts actuellement
+ciblées par chaque mode : facts fragiles, anciennes ou proches à ne pas
+confondre.
+
+## Bilan professeur
+
+Route : `#teacher`.
+
+Le bouton icône `📊` de l'en-tête est disponible depuis tous les écrans. Il ouvre
+un tableau d'analyse du profil actif uniquement.
+
+Le bilan affiche les 81 multiplications de `2x2` à `10x10`, triées par priorité
+de difficulté. Les données couvrent tous les modes de jeu confondus :
+
+- essais ;
+- réussites ;
+- erreurs ;
+- pourcentage de réussite ;
+- erreurs récentes ;
+- série actuelle ;
+- temps moyen ;
+- dernière révision ;
+- modes joués depuis l'ajout du suivi par mode ;
+- recommandation pédagogique.
+
+Les filtres disponibles sont : Toutes, Fragiles, À revoir, Non essayées,
+Maîtrisées.
+
+Les anciennes données restent globales. À partir de cette version, les nouvelles
+réponses alimentent aussi `modeStats` par mode de jeu, par exemple `mixed`,
+`speed-60` ou `garden`.
 
 ## Session Multiplications
 
@@ -307,6 +341,20 @@ Chaque profil possède aussi :
 premiumModes: {
   ownedPacks: [],
   highScores: {}
+}
+```
+
+Chaque fact de multiplication peut aussi contenir un suivi par mode pour les
+réponses enregistrées après l'ajout du bilan professeur :
+
+```js
+modeStats: {
+  mixed: {
+    attempts: 0,
+    successes: 0,
+    errors: 0,
+    recentResults: []
+  }
 }
 ```
 
@@ -354,6 +402,7 @@ js/
     multiplication-session-screen.js
     premium-modes-screen.js
     leaderboard-screen.js
+    teacher-screen.js
     profile-panel.js
     collection-screen.js
     settings-screen.js
@@ -372,6 +421,7 @@ js/
     science-review-engine.js
   multiplication-data.js
   multiplication-generator.js
+  training-insights-engine.js
   mastery-engine.js
   progress-engine.js
   reward-engine.js
@@ -385,6 +435,7 @@ tests/
   progress-engine.test.js
   mastery-engine.test.js
   reward-engine.test.js
+  training-insights-engine.test.js
   mode-pack-engine.test.js
   competitive-engine.test.js
   science-review-engine.test.js
@@ -401,6 +452,7 @@ tests/
 - `state.js` : état en mémoire.
 - `storage.js` : lecture et écriture `localStorage`.
 - `save-data.js` : validation, migration et modèle de sauvegarde multi-profils.
+- `training-insights-engine.js` : rapport professeur, statuts mémoire et tri des difficultés.
 - `theme-data.js` : catalogue des thèmes, prix, couleurs d'aperçu et migrations.
 - `theme-manager.js` : application des thèmes.
 - `reward-engine.js` : gains, achats de tables/thèmes, prix et possessions.

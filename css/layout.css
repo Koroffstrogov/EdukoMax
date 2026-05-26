@@ -64,7 +64,8 @@
 }
 
 .premium-detail,
-.leaderboard-grid {
+.leaderboard-grid,
+.coach-fact-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(260px, 0.42fr);
   gap: var(--space-5);
@@ -81,7 +82,8 @@
   .settings-grid,
   .session-grid,
   .premium-detail,
-  .leaderboard-grid {
+  .leaderboard-grid,
+  .coach-fact-grid {
     grid-template-columns: 1fr;
   }
 

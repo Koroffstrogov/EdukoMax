@@ -6,7 +6,9 @@ export const ROUTES = Object.freeze({
   modesCompetitive: "modes/competitive",
   modesChill: "modes/chill",
   modesScience: "modes/science",
+  modesScienceFacts: "modes/science/facts",
   leaderboard: "leaderboard",
+  teacher: "teacher",
   collection: "collection",
   settings: "settings"
 });

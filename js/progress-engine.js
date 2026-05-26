@@ -54,7 +54,13 @@ export function recordMultiplicationAnswer(progress, question, answerDetails = {
   const factProgress = normalizeFactProgress(nextProgress.facts[fact.id]);
   const answeredAt = normalizeAnsweredAt(answerDetails.answeredAt);
   const isCorrect = resolveCorrectness(question, answerDetails);
-  const updatedFact = updateFactProgress(factProgress, isCorrect, answerDetails, answeredAt);
+  const updatedFact = updateFactProgress(
+    factProgress,
+    isCorrect,
+    answerDetails,
+    answeredAt,
+    question
+  );
 
   updatedFact.mastery = calculateFactMastery(updatedFact, new Date(answeredAt));
   updatedFact.needsPractice = doesFactNeedPractice(updatedFact);
@@ -113,21 +119,13 @@ export function normalizeFactProgress(factProgress) {
     return fallback;
   }
 
-  const attempts = normalizeCount(factProgress.attempts);
-  const successes = Math.min(normalizeCount(factProgress.successes), attempts);
-  const errors = Math.min(normalizeCount(factProgress.errors), attempts);
+  const stats = normalizePracticeStats(factProgress);
 
   return {
-    attempts,
-    successes,
-    errors,
-    currentStreak: normalizeCount(factProgress.currentStreak),
-    bestStreak: normalizeCount(factProgress.bestStreak),
-    recentResults: normalizeRecentResults(factProgress.recentResults),
-    lastAnsweredAt: normalizeNullableString(factProgress.lastAnsweredAt),
-    averageResponseMs: normalizeNullableCount(factProgress.averageResponseMs),
+    ...stats,
     mastery: clampScore(factProgress.mastery),
-    needsPractice: Boolean(factProgress.needsPractice)
+    needsPractice: Boolean(factProgress.needsPractice),
+    modeStats: normalizeModeStats(factProgress.modeStats)
   };
 }
 
@@ -147,25 +145,34 @@ function getQuestionFact(question) {
   throw new Error("A valid multiplication question is required.");
 }
 
-function updateFactProgress(factProgress, isCorrect, answerDetails, answeredAt) {
-  const attempts = factProgress.attempts + 1;
-  const successes = factProgress.successes + (isCorrect ? 1 : 0);
-  const errors = factProgress.errors + (isCorrect ? 0 : 1);
-  const currentStreak = isCorrect ? factProgress.currentStreak + 1 : 0;
+function updateFactProgress(factProgress, isCorrect, answerDetails, answeredAt, question) {
+  const modeId = normalizeModeId(answerDetails.modeId);
+  const questionMode = normalizeModeId(answerDetails.questionMode || question?.mode);
+  const recentMeta = { modeId, questionMode };
+  const updatedStats = updatePracticeStats(
+    factProgress,
+    isCorrect,
+    answerDetails,
+    answeredAt,
+    recentMeta
+  );
+  const modeStats = { ...factProgress.modeStats };
+
+  if (modeId !== null) {
+    modeStats[modeId] = updatePracticeStats(
+      normalizePracticeStats(modeStats[modeId]),
+      isCorrect,
+      answerDetails,
+      answeredAt,
+      recentMeta
+    );
+  }
 
   return {
-    attempts,
-    successes,
-    errors,
-    currentStreak,
-    bestStreak: Math.max(factProgress.bestStreak, currentStreak),
-    recentResults: [
-      ...factProgress.recentResults,
-      { correct: isCorrect, answeredAt }
-    ].slice(-10),
-    lastAnsweredAt: answeredAt,
-    averageResponseMs: updateAverageResponseMs(factProgress, answerDetails.responseMs),
-    mastery: factProgress.mastery
+    ...updatedStats,
+    mastery: factProgress.mastery,
+    needsPractice: factProgress.needsPractice,
+    modeStats
   };
 }
 
@@ -190,6 +197,58 @@ function updateAverageResponseMs(factProgress, responseMs) {
 
   const total = factProgress.averageResponseMs * factProgress.attempts + cleanResponseMs;
   return Math.round(total / (factProgress.attempts + 1));
+}
+
+function updatePracticeStats(stats, isCorrect, answerDetails, answeredAt, recentMeta = {}) {
+  const attempts = stats.attempts + 1;
+  const successes = stats.successes + (isCorrect ? 1 : 0);
+  const errors = stats.errors + (isCorrect ? 0 : 1);
+  const currentStreak = isCorrect ? stats.currentStreak + 1 : 0;
+
+  return {
+    attempts,
+    successes,
+    errors,
+    currentStreak,
+    bestStreak: Math.max(stats.bestStreak, currentStreak),
+    recentResults: [
+      ...stats.recentResults,
+      createRecentResult(isCorrect, answeredAt, recentMeta)
+    ].slice(-10),
+    lastAnsweredAt: answeredAt,
+    averageResponseMs: updateAverageResponseMs(stats, answerDetails.responseMs)
+  };
+}
+
+function normalizePracticeStats(stats) {
+  const attempts = normalizeCount(stats?.attempts);
+  const successes = Math.min(normalizeCount(stats?.successes), attempts);
+  const errors = Math.min(normalizeCount(stats?.errors), attempts);
+
+  return {
+    attempts,
+    successes,
+    errors,
+    currentStreak: normalizeCount(stats?.currentStreak),
+    bestStreak: normalizeCount(stats?.bestStreak),
+    recentResults: normalizeRecentResults(stats?.recentResults),
+    lastAnsweredAt: normalizeNullableString(stats?.lastAnsweredAt),
+    averageResponseMs: normalizeNullableCount(stats?.averageResponseMs)
+  };
+}
+
+function normalizeModeStats(modeStats) {
+  if (!isPlainObject(modeStats)) {
+    return {};
+  }
+
+  return Object.entries(modeStats).reduce((stats, [modeId, value]) => {
+    const safeModeId = normalizeModeId(modeId);
+    if (safeModeId !== null) {
+      stats[safeModeId] = normalizePracticeStats(value);
+    }
+    return stats;
+  }, {});
 }
 
 function normalizeFactMap(facts) {
@@ -239,7 +298,18 @@ function normalizeRecentResult(result) {
 
   return {
     correct: Boolean(result.correct),
-    answeredAt: normalizeNullableString(result.answeredAt)
+    answeredAt: normalizeNullableString(result.answeredAt),
+    modeId: normalizeModeId(result.modeId),
+    questionMode: normalizeModeId(result.questionMode)
+  };
+}
+
+function createRecentResult(isCorrect, answeredAt, meta) {
+  return {
+    correct: isCorrect,
+    answeredAt,
+    modeId: meta.modeId,
+    questionMode: meta.questionMode
   };
 }
 
@@ -256,6 +326,10 @@ function normalizeNullableCount(value) {
 }
 
 function normalizeNullableString(value) {
+  return typeof value === "string" && value.trim() !== "" ? value : null;
+}
+
+function normalizeModeId(value) {
   return typeof value === "string" && value.trim() !== "" ? value : null;
 }
 

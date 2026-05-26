@@ -143,12 +143,20 @@ function renderPackTone(pack) {
     chill: "Pas de chrono ici : tu joues tranquillement et chaque réussite construit un petit monde.",
     science: "Le coach choisit les multiplications utiles à revoir, sans bloquer les autres modes."
   }[pack.family] || "Un pack spécial pour varier les missions.";
+  const action = pack.family === "science"
+    ? `
+      <button class="button button-secondary" type="button" data-route="${ROUTES.modesScienceFacts}">
+        Voir les multiplications
+      </button>
+    `
+    : "";
 
   return `
     <aside class="panel">
       <p class="eyebrow">Ambiance</p>
       <h2>${pack.emoji} ${pack.name}</h2>
       <p>${text}</p>
+      ${action}
     </aside>
   `;
 }
