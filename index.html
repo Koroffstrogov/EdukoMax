@@ -27,7 +27,7 @@
       if (location.protocol === "file:") {
         showFileProtocolNotice();
       } else {
-        import("./js/app.js").catch(showBootError);
+        import("./js/app.js?v=premium-modes-20260526").catch(showBootError);
       }
 
       function showFileProtocolNotice() {

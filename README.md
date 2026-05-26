@@ -42,6 +42,7 @@ L'application contient :
 - un écran de réglages ;
 - une gestion de profils sans mot de passe ;
 - un écran Multiplications avec mondes de tables achetables ;
+- un écran Modes spéciaux avec packs premium achetables en pièces ;
 - un écran de session Multiplications de 8 questions ;
 - tous les modes d'exercices de multiplication disponibles dès le début ;
 - une boutique de thèmes ;
@@ -67,13 +68,16 @@ Chaque profil stocke ses propres données :
 - tables achetées ;
 - pièces ;
 - thèmes possédés ;
+- packs premium possédés ;
+- meilleurs scores premium ;
 - sessions ;
 - cartes et badges de collection ;
 - statistiques.
 
 Depuis le panneau des profils, il est possible de choisir un profil existant en
 un clic, de modifier le profil actif et de supprimer un profil. Les choix
-d'icône et de thème favori du profil actif s'appliquent immédiatement.
+d'icône et de thème favori du profil actif s'appliquent immédiatement. Le thème
+favori proposé est gratuit ou déjà possédé par ce profil.
 
 La création est séparée du reste du panneau : le formulaire apparaît depuis le
 bouton `Nouveau profil`, puis permet de choisir pseudo, icône et thème favori.
@@ -104,7 +108,8 @@ acheter une table verrouillée. L'enfant économise ses pièces et choisit le mo
 qu'il veut ouvrir.
 
 Chaque multiplication est suivie individuellement avec un identifiant comme
-`6x7`. La progression garde notamment :
+`6x7`. Chaque profil possède sa propre mémoire complète des 81 multiplications
+de `2x2` à `10x10`. La progression garde notamment :
 
 - le nombre d'essais ;
 - le nombre de réussites ;
@@ -115,6 +120,8 @@ Chaque multiplication est suivie individuellement avec un identifiant comme
 - la date de dernière réponse ;
 - le temps moyen de réponse ;
 - le score de maîtrise ;
+- l'indicateur `needsPractice` quand la multiplication demande encore un
+  entraînement ;
 - les points de table gagnés avec les bonnes réponses.
 
 La progression sert à afficher un état pédagogique :
@@ -125,6 +132,17 @@ La progression sert à afficher un état pédagogique :
 - Presque maîtrisée ;
 - Maîtrisée.
 
+Le moteur classe aussi les facts en mémoire interne :
+
+- `new` : pas encore travaillée ;
+- `easy` : réussie vite et régulièrement ;
+- `hesitating` : réussie mais lente, récente ou fragile ;
+- `struggling` : erreurs fréquentes ou récentes.
+
+Le générateur choisit ensuite les questions uniquement dans les tables
+débloquées du profil actif. Il privilégie les facts peu vues, anciennes, lentes,
+marquées `needsPractice` ou avec des erreurs récentes.
+
 ## Boutique et pièces
 
 Chaque bonne réponse donne :
@@ -134,6 +152,7 @@ Chaque bonne réponse donne :
 
 Les pièces se dépensent pour acheter des tables et des thèmes. Les points de
 table restent comme trace de progression, mais ne bloquent aucun achat.
+Les pièces peuvent aussi débloquer des packs de modes premium, sans argent réel.
 
 Prix des tables :
 
@@ -145,11 +164,47 @@ Prix des tables :
 - table 7 : 90 pièces.
 
 Tous les modes de multiplication sont gratuits et disponibles dès le début. Les
-thèmes restent des achats cosmétiques.
+thèmes restent des achats cosmétiques. Les packs premium sont des variantes
+optionnelles pour jouer autrement.
 
 Le compteur de pièces est affiché dans l'en-tête, sur l'accueil, sur l'écran
 Multiplications, en session et dans les réglages. Il pulse quand le montant
 change, avec respect de `prefers-reduced-motion`.
+
+## Thèmes visuels
+
+L'écran Réglages contient une boutique d'univers visuels. Les thèmes modifient
+les couleurs globales, le fond de page, les cartes, les boutons, le compteur de
+pièces et les cartes de mondes.
+
+Thèmes gratuits possédés dès le début :
+
+- 🌈 Kawaii Pop Club ;
+- 🐱 Chats Cosmiques.
+
+Thèmes achetables avec des pièces :
+
+- 🎤 Studio K-Pop : 120 pièces ;
+- 🦄 Licornes Néon Academy : 140 pièces ;
+- 🩷 Squishy Planet : 160 pièces ;
+- 💎 Bijoux & Charms Magiques : 180 pièces ;
+- 🎨 Atelier Paillettes : 180 pièces ;
+- 🧁 Pâtisserie Magique : 200 pièces.
+
+Les anciens IDs de thèmes sont migrés automatiquement :
+
+- `sunny` devient `kawaii-pop` ;
+- `ocean` devient `cosmic-cats` ;
+- `berry` devient `magic-bakery`.
+
+La sauvegarde normalisée contient aussi :
+
+```js
+cosmetics: {
+  ownedThemes: ["kawaii-pop", "cosmic-cats"],
+  activeTheme: "kawaii-pop"
+}
+```
 
 ## Modes d'exercices
 
@@ -164,6 +219,58 @@ début :
 
 La sélection des questions privilégie les multiplications peu vues, ratées ou
 anciennes, afin d'éviter un hasard pur.
+
+## Modes premium
+
+Route principale : `#modes`.
+
+Les modes gratuits restent accessibles sans achat. Les packs premium sont
+visibles dès le début, verrouillés au départ, puis achetables avec les pièces du
+profil actif :
+
+- 🏆 `competitive-pack` — Défis Champions : 180 pièces ;
+- 🌸 `chill-pack` — Mode Détente : 140 pièces ;
+- 🧠 `science-pack` — Coach Mémoire : 220 pièces.
+
+Routes disponibles :
+
+- `#modes` : boutique des packs ;
+- `#modes/competitive` : Défis Champions ;
+- `#modes/chill` : Mode Détente ;
+- `#modes/science` : Coach Mémoire ;
+- `#leaderboard` : classement local compétitif.
+
+### Défis Champions
+
+Modes inclus :
+
+- `speed-60` : Sprint 60”, score basé sur les bonnes réponses ;
+- `combo-max` : Combo Max, score basé sur la meilleure série.
+
+Les scores sont enregistrés dans un top 10 local, partagé entre tous les profils
+du navigateur. Le score garde le profil, l'icône, la précision, le mode et la
+date.
+
+### Mode Détente
+
+Modes inclus :
+
+- `garden` : Jardin des Multiplications, les bonnes réponses font pousser des
+  fleurs ;
+- `mascot-snack` : Goûter de la Mascotte, les bonnes réponses donnent des
+  friandises.
+
+Pas de chrono agressif ni de classement.
+
+### Coach Mémoire
+
+Modes inclus :
+
+- `smart-review` : Révision Intelligente, priorité aux facts fragiles ;
+- `anti-forget` : Mission Anti-Oubli, priorité aux facts anciennes ;
+- `clever-mix` : Mix Malin, mélange de facts proches ou confusables.
+
+Le coach utilise uniquement les tables débloquées du profil actif.
 
 ## Session Multiplications
 
@@ -194,6 +301,24 @@ La sauvegarde contient une liste `profiles` et un `activeProfileId`. Les
 anciennes sauvegardes mono-profil sont migrées automatiquement vers un premier
 profil.
 
+Chaque profil possède aussi :
+
+```js
+premiumModes: {
+  ownedPacks: [],
+  highScores: {}
+}
+```
+
+Le classement compétitif global reste au niveau de la sauvegarde :
+
+```js
+leaderboards: {
+  "speed-60": [],
+  "combo-max": []
+}
+```
+
 Pour repartir de zéro depuis la console du navigateur :
 
 ```js
@@ -218,13 +343,17 @@ js/
   state.js
   storage.js
   save-data.js
+  theme-data.js
   theme-manager.js
   games/
     multiplication-session.js
   screens/
+    app-shell.js
     home-screen.js
     multiplication-screen.js
     multiplication-session-screen.js
+    premium-modes-screen.js
+    leaderboard-screen.js
     profile-panel.js
     collection-screen.js
     settings-screen.js
@@ -234,6 +363,13 @@ js/
     badge-engine.js
     collection-renderer.js
     reward-reveal.js
+  premium-modes/
+    mode-pack-data.js
+    mode-pack-engine.js
+    premium-session.js
+    competitive-engine.js
+    chill-engine.js
+    science-review-engine.js
   multiplication-data.js
   multiplication-generator.js
   mastery-engine.js
@@ -249,6 +385,10 @@ tests/
   progress-engine.test.js
   mastery-engine.test.js
   reward-engine.test.js
+  mode-pack-engine.test.js
+  competitive-engine.test.js
+  science-review-engine.test.js
+  premium-session.test.js
   collectible-engine.test.js
   badge-engine.test.js
 ```
@@ -256,10 +396,12 @@ tests/
 ## Rôle des modules JavaScript
 
 - `app.js` : démarrage de l'application, événements et rendu de la route active.
+- `screens/app-shell.js` : en-tête, navigation et rendu de la route active.
 - `router.js` : navigation simple par hash.
 - `state.js` : état en mémoire.
 - `storage.js` : lecture et écriture `localStorage`.
 - `save-data.js` : validation, migration et modèle de sauvegarde multi-profils.
+- `theme-data.js` : catalogue des thèmes, prix, couleurs d'aperçu et migrations.
 - `theme-manager.js` : application des thèmes.
 - `reward-engine.js` : gains, achats de tables/thèmes, prix et possessions.
 - `collectibles/collectible-data.js` : définitions statiques de cartes et badges.
@@ -267,6 +409,12 @@ tests/
 - `collectibles/badge-engine.js` : évaluation et attribution des badges.
 - `collectibles/collection-renderer.js` : rendu grille de la collection.
 - `collectibles/reward-reveal.js` : affichage des récompenses en fin de session.
+- `premium-modes/mode-pack-data.js` : catalogue des packs et modes premium.
+- `premium-modes/mode-pack-engine.js` : achat et possession des packs.
+- `premium-modes/premium-session.js` : sessions premium et réponses.
+- `premium-modes/competitive-engine.js` : scores et top 10 local.
+- `premium-modes/chill-engine.js` : textes et compteurs des modes détente.
+- `premium-modes/science-review-engine.js` : sélection intelligente des facts.
 - `multiplication-data.js` : tables, facts et métadonnées pédagogiques.
 - `multiplication-generator.js` : génération des questions.
 - `mastery-engine.js` : calculs de maîtrise et priorités.
@@ -305,7 +453,7 @@ cartes rares/épiques, sessions cumulées, tables maîtrisées.
 
 ### Écran Collection
 
-Route `#/collection`. Affiche cartes et badges avec filtres par table et
+Route `#collection`. Affiche cartes et badges avec filtres par table et
 rareté, barre de progression, et messages motivants.
 
 ## Règles de développement

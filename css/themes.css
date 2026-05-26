@@ -1,42 +1,139 @@
-:root,
-:root[data-theme="sunny"] {
-  --color-bg: #fff8ed;
+body,
+body[data-theme="kawaii-pop"] {
+  --color-bg: #fff6fc;
   --color-bg-strong: #e9f8ff;
   --color-surface: #ffffff;
-  --color-surface-soft: #fff4d6;
-  --color-ink: #243047;
-  --color-muted: #64748b;
-  --color-line: #dde7f0;
-  --color-primary: #2563eb;
-  --color-secondary: #14b8a6;
-  --color-accent: #f97316;
-  --color-warning: #facc15;
+  --color-surface-soft: #fff0fb;
+  --color-ink: #33233f;
+  --color-muted: #7a6084;
+  --color-line: #f0cfe8;
+  --color-primary: #e85fc8;
+  --color-secondary: #8b7cf6;
+  --color-accent: #38bdf8;
+  --color-warning: #fde68a;
+  --radius-md: 18px;
+  --radius-sm: 14px;
+  --shadow-button: 0 10px 22px rgba(232, 95, 200, 0.22);
+  --theme-bg:
+    repeating-linear-gradient(135deg, rgba(255, 143, 214, 0.14) 0 10px, transparent 10px 34px),
+    linear-gradient(90deg, rgba(185, 156, 255, 0.16), transparent 42%, rgba(159, 231, 255, 0.18)),
+    linear-gradient(180deg, var(--color-bg-strong), var(--color-bg));
 }
 
-:root[data-theme="ocean"] {
-  --color-bg: #effaf8;
-  --color-bg-strong: #dff4ff;
-  --color-surface: #ffffff;
-  --color-surface-soft: #e8fff9;
-  --color-ink: #19324a;
-  --color-muted: #557085;
-  --color-line: #cde7ef;
-  --color-primary: #0f76c9;
-  --color-secondary: #10b981;
-  --color-accent: #f59e0b;
+body[data-theme="cosmic-cats"] {
+  --color-bg: #f3f0ff;
+  --color-bg-strong: #dfe7ff;
+  --color-surface-soft: #f1edff;
+  --color-ink: #251b46;
+  --color-muted: #665889;
+  --color-line: #d7cbff;
+  --color-primary: #6d5dfc;
+  --color-secondary: #ff70c8;
+  --color-accent: #38bdf8;
   --color-warning: #fde047;
+  --theme-bg:
+    repeating-linear-gradient(45deg, rgba(253, 224, 71, 0.22) 0 3px, transparent 3px 28px),
+    linear-gradient(120deg, rgba(139, 92, 246, 0.18), transparent 44%, rgba(255, 112, 200, 0.18)),
+    linear-gradient(180deg, #dfe7ff, #f7f3ff);
 }
 
-:root[data-theme="berry"] {
-  --color-bg: #fff6fb;
-  --color-bg-strong: #f2f7ff;
-  --color-surface: #ffffff;
-  --color-surface-soft: #fff0f8;
-  --color-ink: #33243c;
-  --color-muted: #725f78;
-  --color-line: #ead8ee;
-  --color-primary: #c026d3;
-  --color-secondary: #22c55e;
-  --color-accent: #f97316;
+body[data-theme="kpop-studio"] {
+  --color-bg: #fff4fb;
+  --color-bg-strong: #eee7ff;
+  --color-surface-soft: #fff0fb;
+  --color-ink: #2f2143;
+  --color-muted: #705f84;
+  --color-line: #ead2f8;
+  --color-primary: #ec4899;
+  --color-secondary: #7c3aed;
+  --color-accent: #38bdf8;
+  --color-warning: #fde047;
+  --theme-bg:
+    linear-gradient(115deg, rgba(236, 72, 153, 0.14), transparent 35%),
+    linear-gradient(245deg, rgba(56, 189, 248, 0.16), transparent 38%),
+    linear-gradient(180deg, #f2eaff, #fff7fb);
+}
+
+body[data-theme="neon-unicorns"] {
+  --color-bg: #f8f3ff;
+  --color-bg-strong: #e7fbff;
+  --color-surface-soft: #f4ecff;
+  --color-ink: #2c1c4d;
+  --color-muted: #6d5c8f;
+  --color-line: #d9c9ff;
+  --color-primary: #a855f7;
+  --color-secondary: #ff5cbb;
+  --color-accent: #22d3ee;
+  --color-warning: #fde68a;
+  --theme-bg:
+    linear-gradient(120deg, rgba(255, 92, 187, 0.15), transparent 38%),
+    repeating-linear-gradient(90deg, rgba(103, 232, 249, 0.18) 0 8px, transparent 8px 32px),
+    linear-gradient(180deg, #e7fbff, #fbf5ff);
+}
+
+body[data-theme="squishy-planet"] {
+  --color-bg: #fff8f1;
+  --color-bg-strong: #e9fff4;
+  --color-surface-soft: #fff1f7;
+  --color-ink: #3c2c38;
+  --color-muted: #7a6874;
+  --color-line: #f4d4df;
+  --color-primary: #ff7ab6;
+  --color-secondary: #34d399;
+  --color-accent: #60a5fa;
+  --color-warning: #fde68a;
+  --radius-md: 24px;
+  --radius-sm: 18px;
+  --theme-bg:
+    repeating-linear-gradient(145deg, rgba(255, 179, 217, 0.2) 0 14px, transparent 14px 42px),
+    linear-gradient(110deg, rgba(184, 247, 212, 0.34), transparent 50%, rgba(189, 224, 255, 0.3)),
+    linear-gradient(180deg, #effff7, #fff8f1);
+}
+
+body[data-theme="magic-charms"] {
+  --color-bg: #fff9fb;
+  --color-bg-strong: #ecfffb;
+  --color-surface-soft: #fff1f8;
+  --color-ink: #37283a;
+  --color-muted: #74637a;
+  --color-line: #ead7e7;
+  --color-primary: #db5fb5;
+  --color-secondary: #18b9ac;
+  --color-accent: #d8a928;
+  --color-warning: #f8d66d;
+  --theme-bg:
+    linear-gradient(135deg, rgba(248, 214, 109, 0.2), transparent 35%),
+    linear-gradient(180deg, #ecfffb, #fff8fb);
+}
+
+body[data-theme="sticker-workshop"] {
+  --color-bg: #fffaf0;
+  --color-bg-strong: #eff6ff;
+  --color-surface-soft: #fff4d6;
+  --color-ink: #2d3348;
+  --color-muted: #647085;
+  --color-line: #e5d7b8;
+  --color-primary: #f257a2;
+  --color-secondary: #3b82f6;
+  --color-accent: #22c55e;
   --color-warning: #facc15;
+  --theme-bg:
+    linear-gradient(90deg, rgba(250, 204, 21, 0.2) 0 12px, transparent 12px 24px),
+    linear-gradient(180deg, #eff6ff, #fffaf0);
+}
+
+body[data-theme="magic-bakery"] {
+  --color-bg: #fff9ef;
+  --color-bg-strong: #fff0f2;
+  --color-surface-soft: #fff0dd;
+  --color-ink: #3d2d2b;
+  --color-muted: #79645f;
+  --color-line: #ead9c7;
+  --color-primary: #ec6f91;
+  --color-secondary: #4dbb8a;
+  --color-accent: #b08968;
+  --color-warning: #ffd166;
+  --theme-bg:
+    repeating-linear-gradient(135deg, rgba(255, 209, 102, 0.18) 0 12px, transparent 12px 34px),
+    linear-gradient(180deg, #fff0f2, #fff9ef);
 }

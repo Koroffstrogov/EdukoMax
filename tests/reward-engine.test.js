@@ -35,7 +35,7 @@ test("reward: coins never become negative", () => {
   save.rewards.coins = 0;
 
   // Try to buy something without coins
-  const result = purchaseShopItem(save, "theme", "ocean");
+  const result = purchaseShopItem(save, "theme", "kpop-studio");
   assertEqual(result.ok, false);
   assert(result.save.rewards.coins >= 0, "coins >= 0");
 });
@@ -81,19 +81,19 @@ test("reward: table prices are centralized", () => {
 
 test("reward: theme purchase works with enough coins", () => {
   const save = createDefaultSave();
-  save.rewards.coins = 10;
+  save.rewards.coins = 120;
 
-  const result = purchaseShopItem(save, "theme", "ocean");
+  const result = purchaseShopItem(save, "theme", "kpop-studio");
   assertEqual(result.ok, true);
-  assert(result.save.rewards.ownedThemes.includes("ocean"), "ocean owned");
-  assertEqual(result.save.rewards.coins, 2, "8 coins spent");
+  assert(result.save.rewards.ownedThemes.includes("kpop-studio"), "kpop-studio owned");
+  assertEqual(result.save.rewards.coins, 0, "120 coins spent");
 });
 
 test("reward: cannot buy already-owned item", () => {
   const save = createDefaultSave();
   save.rewards.coins = 100;
-  // sunny is already owned by default
-  const result = purchaseShopItem(save, "theme", "sunny");
+  // kawaii-pop is already owned by default
+  const result = purchaseShopItem(save, "theme", "kawaii-pop");
   assertEqual(result.ok, false);
   assertEqual(result.error, "already-owned");
 });
@@ -106,8 +106,9 @@ test("reward: shop summary shows correct owned state", () => {
   assert(summary.modes.every((mode) => mode.isOwned), "all modes owned from start");
   assert(summary.tables.some((t) => t.table === 2 && t.isOwned), "table 2 owned");
   assert(summary.tables.some((t) => t.table === 3 && !t.isOwned && t.price === 40), "table 3 visible with price");
-  assert(summary.themes.some((t) => t.id === "sunny" && t.isOwned), "sunny owned");
-  assert(summary.themes.some((t) => t.id === "ocean" && !t.isOwned), "ocean not owned");
+  assert(summary.themes.some((t) => t.id === "kawaii-pop" && t.isOwned), "kawaii-pop owned");
+  assert(summary.themes.some((t) => t.id === "cosmic-cats" && t.isOwned), "cosmic-cats owned");
+  assert(summary.themes.some((t) => t.id === "kpop-studio" && !t.isOwned), "kpop-studio not owned");
 });
 
 test("reward: all multiplication modes are owned from start", () => {
@@ -121,6 +122,7 @@ test("reward: all multiplication modes are owned from start", () => {
 
 test("reward: theme ownership check works", () => {
   const save = createDefaultSave();
-  assert(isThemeOwned(save, "sunny"), "sunny owned");
-  assert(!isThemeOwned(save, "ocean"), "ocean not owned");
+  assert(isThemeOwned(save, "kawaii-pop"), "kawaii-pop owned");
+  assert(isThemeOwned(save, "cosmic-cats"), "cosmic-cats owned");
+  assert(!isThemeOwned(save, "kpop-studio"), "kpop-studio not owned");
 });

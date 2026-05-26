@@ -3,6 +3,7 @@ import {
   answerMultiplicationSession,
   createMultiplicationSession
 } from "./games/multiplication-session.js";
+import { completeSession } from "./games/session-completion.js";
 import {
   SESSION_MODES,
   applyAnswerRewards,
@@ -10,9 +11,14 @@ import {
   isThemeOwned,
   purchaseShopItem
 } from "./reward-engine.js";
-import { pickCardRewards, applyCardRewards, markCollectiblesSeen } from "./collectibles/collectible-engine.js";
-import { evaluateBadges, applyBadgeRewards, updateStatsAfterSession } from "./collectibles/badge-engine.js";
-import { calculateTableMastery } from "./mastery-engine.js";
+import { markCollectiblesSeen } from "./collectibles/collectible-engine.js";
+import {
+  advancePremiumSession,
+  answerPremiumSession,
+  createPremiumSession
+} from "./premium-modes/premium-session.js";
+import { getPackForMode } from "./premium-modes/mode-pack-data.js";
+import { buyModePack, isModePackOwned } from "./premium-modes/mode-pack-engine.js";
 import {
   activateProfile,
   addProfile,
@@ -78,8 +84,7 @@ export function updateTheme(theme) {
     return false;
   }
 
-  appState.save.settings.theme = theme;
-  appState.save.profile.favoriteTheme = theme;
+  setActiveTheme(theme);
   touchSave();
   return true;
 }
@@ -126,14 +131,29 @@ export function startMultiplicationSession(modeId = SESSION_MODES.directAnswer, 
   appState.shopMessage = null;
 }
 
+export function startPremiumSession(modeId) {
+  ensureInitialized();
+  const pack = getPackForMode(modeId);
+
+  if (!pack) {
+    appState.shopMessage = "Ce mode spécial n'est pas disponible.";
+    return false;
+  }
+
+  if (!isModePackOwned(appState.save, pack.id)) {
+    appState.shopMessage = `Débloque d'abord le pack ${pack.name} ${pack.emoji}.`;
+    return false;
+  }
+
+  appState.activeSession = createPremiumSession(appState.save, modeId);
+  appState.shopMessage = null;
+  return true;
+}
+
 export function submitMultiplicationAnswer(answerValue) {
   ensureInitialized();
 
-  const result = answerMultiplicationSession(
-    appState.activeSession,
-    appState.save.progress.multiplication,
-    answerValue
-  );
+  const result = answerActiveSession(answerValue);
 
   appState.save.progress.multiplication = result.progress;
 
@@ -146,7 +166,10 @@ export function submitMultiplicationAnswer(answerValue) {
   }
 
   if (shouldRecordSessionCompletion(appState.activeSession)) {
-    recordSessionCompletion();
+    const completion = completeSession(appState.save, appState.activeSession);
+    appState.save = completion.save;
+    appState.activeSession = completion.session;
+    appState.sessionRewards = completion.sessionRewards;
   }
 
   touchSave();
@@ -156,10 +179,9 @@ export function submitMultiplicationAnswer(answerValue) {
 export function advanceActiveSession() {
   ensureInitialized();
 
-  appState.activeSession = advanceMultiplicationSession(
-    appState.activeSession,
-    appState.save.progress.multiplication
-  );
+  appState.activeSession = appState.activeSession?.type === "premium"
+    ? advancePremiumSession(appState.activeSession, appState.save.progress.multiplication)
+    : advanceMultiplicationSession(appState.activeSession, appState.save.progress.multiplication);
 }
 
 export function endActiveSession() {
@@ -179,8 +201,7 @@ export function buyShopItem(itemType, itemId) {
   appState.save = result.save;
 
   if (itemType === "theme") {
-    appState.save.settings.theme = itemId;
-    appState.save.profile.favoriteTheme = itemId;
+    setActiveTheme(itemId);
   }
 
   appState.shopMessage = buildShopMessage(itemType, result.item);
@@ -189,118 +210,38 @@ export function buyShopItem(itemType, itemId) {
   return cloneData(result);
 }
 
+export function buyModePackItem(packId) {
+  ensureInitialized();
+  const result = buyModePack(appState.save, packId);
+
+  if (!result.ok) {
+    return cloneData(result);
+  }
+
+  appState.save = result.save;
+  appState.shopMessage = buildShopMessage("mode-pack", result.pack);
+  touchSave();
+  return cloneData(result);
+}
+
+function answerActiveSession(answerValue) {
+  if (appState.activeSession?.type === "premium") {
+    return answerPremiumSession(
+      appState.activeSession,
+      appState.save.progress.multiplication,
+      answerValue
+    );
+  }
+
+  return answerMultiplicationSession(
+    appState.activeSession,
+    appState.save.progress.multiplication,
+    answerValue
+  );
+}
+
 function shouldRecordSessionCompletion(session) {
   return Boolean(session?.isComplete) && !session.completionRecorded;
-}
-
-function recordSessionCompletion() {
-  appState.activeSession.completionRecorded = true;
-  appState.save.sessions.completed += 1;
-  appState.save.sessions.lastPlayedAt = new Date().toISOString();
-
-  const session = appState.activeSession;
-  const sessionSummary = buildSessionSummary(session);
-
-  updateStatsAfterSession(appState.save, sessionSummary);
-
-  const cardResult = pickCardRewards(appState.save, sessionSummary);
-  applyCardRewards(appState.save, cardResult.cards);
-
-  const badgeResult = evaluateBadges(appState.save, sessionSummary);
-  applyBadgeRewards(appState.save, badgeResult);
-
-  if (cardResult.bonusCoins > 0) {
-    appState.save.rewards.coins += cardResult.bonusCoins;
-    appState.save.rewards.totalCoinsEarned += cardResult.bonusCoins;
-  }
-
-  appState.sessionRewards = {
-    cards: cardResult.cards,
-    badges: badgeResult,
-    bonusCoins: cardResult.bonusCoins
-  };
-}
-
-function buildSessionSummary(session) {
-  const table = getSessionTable(session);
-  const masteredTablesBefore = getMasteredTablesList();
-
-  return {
-    table,
-    mode: session.modeId,
-    totalQuestions: session.totalQuestions,
-    correctAnswers: session.correctCount,
-    accuracy: session.answeredCount > 0 ? session.correctCount / session.answeredCount : 0,
-    bestStreak: calculateBestStreak(session.answers),
-    perfect: session.correctCount === session.totalQuestions,
-    masteredTablesBefore,
-    masteredTablesAfter: masteredTablesBefore
-  };
-}
-
-function getSessionTable(session) {
-  if (session.table) {
-    return session.table;
-  }
-
-  if (!session.answers || session.answers.length === 0) {
-    return 2;
-  }
-
-  const tableCounts = {};
-
-  for (const answer of session.answers) {
-    const table = Number(String(answer.factId).split("x")[0]);
-
-    if (table >= 2 && table <= 10) {
-      tableCounts[table] = (tableCounts[table] || 0) + 1;
-    }
-  }
-
-  let maxTable = 2;
-  let maxCount = 0;
-
-  for (const [table, count] of Object.entries(tableCounts)) {
-    if (count > maxCount) {
-      maxCount = count;
-      maxTable = Number(table);
-    }
-  }
-
-  return maxTable;
-}
-
-function getMasteredTablesList() {
-  const mastered = [];
-
-  for (let table = 2; table <= 10; table++) {
-    const tableMastery = calculateTableMastery(
-      table,
-      appState.save.progress.multiplication
-    );
-
-    if (tableMastery.mastery >= 80) {
-      mastered.push(table);
-    }
-  }
-
-  return mastered;
-}
-
-function calculateBestStreak(answers) {
-  let best = 0;
-  let current = 0;
-
-  for (const answer of answers || []) {
-    if (answer.isCorrect) {
-      current++;
-      best = Math.max(best, current);
-    } else {
-      current = 0;
-    }
-  }
-
-  return best;
 }
 
 function normalizePlayableTable(table) {
@@ -360,7 +301,29 @@ function buildShopMessage(itemType, item) {
     return `Nouvelle ambiance débloquée : ${item.label} !`;
   }
 
+  if (itemType === "mode-pack") {
+    return `Nouveau pack débloqué : ${item.name} ${item.emoji}`;
+  }
+
   return null;
+}
+
+function setActiveTheme(theme) {
+  appState.save.settings.theme = theme;
+  appState.save.profile.favoriteTheme = theme;
+  appState.save.cosmetics = {
+    ...(appState.save.cosmetics || {}),
+    activeTheme: theme,
+    ownedThemes: uniqueStrings([...(appState.save.cosmetics?.ownedThemes || []), theme])
+  };
+  appState.save.rewards.ownedThemes = uniqueStrings([
+    ...(appState.save.rewards?.ownedThemes || []),
+    theme
+  ]);
+}
+
+function uniqueStrings(values) {
+  return [...new Set(values.filter(Boolean).map(String))];
 }
 
 function touchSave() {

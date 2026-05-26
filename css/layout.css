@@ -63,6 +63,14 @@
   align-items: start;
 }
 
+.premium-detail,
+.leaderboard-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.42fr);
+  gap: var(--space-5);
+  align-items: start;
+}
+
 @media (max-width: 860px) {
   .app-shell {
     padding: var(--space-4);
@@ -71,7 +79,9 @@
   .topbar,
   .dashboard-grid,
   .settings-grid,
-  .session-grid {
+  .session-grid,
+  .premium-detail,
+  .leaderboard-grid {
     grid-template-columns: 1fr;
   }
 

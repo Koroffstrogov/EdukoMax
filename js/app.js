@@ -1,6 +1,7 @@
 import { loadSave, saveGame } from "./storage.js";
 import {
   advanceActiveSession,
+  buyModePackItem,
   buyShopItem,
   clearSessionRewards,
   createProfile,
@@ -12,6 +13,7 @@ import {
   initializeState,
   selectProfile,
   startMultiplicationSession,
+  startPremiumSession,
   submitMultiplicationAnswer,
   toggleProfilePanel,
   updateCollectionFilter,
@@ -21,14 +23,7 @@ import {
 } from "./state.js";
 import { navigate, ROUTES, startRouter } from "./router.js";
 import { applyTheme, isKnownTheme } from "./theme-manager.js";
-import { renderHomeView } from "./screens/home-screen.js";
-import { renderMultiplicationView } from "./screens/multiplication-screen.js";
-import {
-  renderMultiplicationSessionView
-} from "./screens/multiplication-session-screen.js";
-import { renderSettingsView } from "./screens/settings-screen.js";
-import { renderCollectionScreen } from "./screens/collection-screen.js";
-import { renderProfileControls } from "./screens/profile-panel.js";
+import { getPageTitle, renderAppShell } from "./screens/app-shell.js";
 
 let autoAdvanceTimer = null;
 let lastRenderedCoins = null;
@@ -109,10 +104,19 @@ function handleAppClick(event, root) {
     return;
   }
 
+  const buyPackTarget = event.target.closest("[data-buy-pack]");
+
+  if (buyPackTarget) {
+    buyPack(buyPackTarget.dataset.buyPack, root);
+    return;
+  }
+
   const routeTarget = event.target.closest("[data-route]");
 
   if (routeTarget) {
+    updateRoute(routeTarget.dataset.route);
     navigate(routeTarget.dataset.route);
+    renderApp(root);
     return;
   }
 
@@ -126,6 +130,18 @@ function handleAppClick(event, root) {
     );
     saveGame(getSaveSnapshot());
     navigate(ROUTES.multiplicationSession);
+    renderApp(root);
+    return;
+  }
+
+  const premiumStartTarget = event.target.closest("[data-start-premium-mode]");
+
+  if (premiumStartTarget) {
+    clearSessionRewards();
+    if (startPremiumSession(premiumStartTarget.dataset.startPremiumMode)) {
+      saveGame(getSaveSnapshot());
+      navigate(ROUTES.multiplicationSession);
+    }
     renderApp(root);
     return;
   }
@@ -145,10 +161,13 @@ function handleAppClick(event, root) {
   }
 
   if (event.target.closest("[data-end-session]")) {
+    const route = getStateSnapshot().activeSession?.type === "premium"
+      ? ROUTES.modes
+      : ROUTES.multiplication;
     endActiveSession();
     clearSessionRewards();
     saveGame(getSaveSnapshot());
-    navigate(ROUTES.multiplication);
+    navigate(route);
     renderApp(root);
     return;
   }
@@ -245,6 +264,12 @@ function buyItem(itemType, itemId, root) {
   renderApp(root);
 }
 
+function buyPack(packId, root) {
+  buyModePackItem(packId);
+  saveGame(getSaveSnapshot());
+  renderApp(root);
+}
+
 function changeTheme(theme, root) {
   if (!isKnownTheme(theme) || !updateTheme(theme)) {
     return;
@@ -260,14 +285,7 @@ function renderApp(root) {
 
   const state = getStateSnapshot();
   document.title = getPageTitle(state.route);
-  root.innerHTML = `
-    <div class="app-shell">
-      ${renderHeader(state)}
-      <main id="main-content" class="app-main" tabindex="-1">
-        ${renderCurrentView(state)}
-      </main>
-    </div>
-  `;
+  root.innerHTML = renderAppShell(state, lastRenderedCoins);
   lastRenderedCoins = state.save.rewards.coins;
   focusAnswerInput(root);
   scheduleAutoAdvance(root, state);
@@ -282,72 +300,6 @@ function readProfileForm(form) {
   };
 }
 
-function renderHeader(state) {
-  return `
-    <header class="topbar">
-      <div class="brand" aria-label="EdukoMax">
-        <span class="brand-mark" aria-hidden="true">EM</span>
-        <span>
-          <span class="brand-name">EdukoMax</span>
-          <span class="brand-subtitle">Maths courtes et joyeuses</span>
-        </span>
-      </div>
-      <nav class="topnav" aria-label="Navigation principale">
-        ${renderNavButton("Accueil", ROUTES.home, state.route)}
-        ${renderNavButton("Multiplications", ROUTES.multiplication, state.route)}
-        ${renderNavButton("Collection", ROUTES.collection, state.route)}
-        ${renderNavButton("Réglages", ROUTES.settings, state.route)}
-      </nav>
-      ${renderCoinCounter(state.save.rewards.coins)}
-      ${renderProfileControls(state)}
-    </header>
-  `;
-}
-
-function renderCoinCounter(coins) {
-  const bumpClass = lastRenderedCoins !== null && lastRenderedCoins !== coins
-    ? " coin-pill--bump"
-    : "";
-
-  return `
-    <div class="coin-pill coin-pill--header${bumpClass}" aria-label="${coins} pièces">
-      <span aria-hidden="true">🪙</span>
-      <strong>${coins}</strong>
-    </div>
-  `;
-}
-
-function renderNavButton(label, route, activeRoute) {
-  const activeClass = route === activeRoute ? " is-active" : "";
-  const current = route === activeRoute ? ' aria-current="page"' : "";
-
-  return `
-    <button class="nav-button${activeClass}" type="button" data-route="${route}" ${current}>
-      ${label}
-    </button>
-  `;
-}
-
-function renderCurrentView(state) {
-  if (state.route === ROUTES.multiplicationSession) {
-    return renderMultiplicationSessionView(state);
-  }
-
-  if (state.route === ROUTES.multiplication) {
-    return renderMultiplicationView(state);
-  }
-
-  if (state.route === ROUTES.collection) {
-    return renderCollectionScreen(state);
-  }
-
-  if (state.route === ROUTES.settings) {
-    return renderSettingsView(state);
-  }
-
-  return renderHomeView(state);
-}
-
 function scheduleAutoAdvance(root, state) {
   const feedback = state.activeSession?.currentFeedback;
 
@@ -359,7 +311,7 @@ function scheduleAutoAdvance(root, state) {
     advanceActiveSession();
     saveGame(getSaveSnapshot());
     renderApp(root);
-  }, 850);
+  }, feedback.fastAdvance ? 220 : 850);
 }
 
 function clearAutoAdvance() {
@@ -367,26 +319,6 @@ function clearAutoAdvance() {
     window.clearTimeout(autoAdvanceTimer);
     autoAdvanceTimer = null;
   }
-}
-
-function getPageTitle(route) {
-  if (route === ROUTES.settings) {
-    return "Réglages - EdukoMax";
-  }
-
-  if (route === ROUTES.multiplication) {
-    return "Multiplications - EdukoMax";
-  }
-
-  if (route === ROUTES.multiplicationSession) {
-    return "Session multiplications - EdukoMax";
-  }
-
-  if (route === ROUTES.collection) {
-    return "Collection - EdukoMax";
-  }
-
-  return "EdukoMax";
 }
 
 function focusAnswerInput(root) {

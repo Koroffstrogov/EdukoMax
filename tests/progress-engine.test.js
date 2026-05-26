@@ -34,6 +34,7 @@ test("progress: correct answer increments attempts, successes, currentStreak", (
   assertEqual(fact.successes, 1);
   assertEqual(fact.currentStreak, 1);
   assertEqual(fact.errors, 0);
+  assertEqual(fact.needsPractice, true, "one answer still needs practice");
 });
 
 test("progress: wrong answer increments attempts, errors and resets streak", () => {
@@ -56,6 +57,7 @@ test("progress: wrong answer increments attempts, errors and resets streak", () 
   assertEqual(fact.successes, 1);
   assertEqual(fact.errors, 1);
   assertEqual(fact.currentStreak, 0, "streak reset after error");
+  assertEqual(fact.needsPractice, true, "wrong answer marks practice need");
 });
 
 test("progress: recentResults stays bounded (max 10)", () => {
@@ -102,7 +104,7 @@ test("progress: averageResponseMs updates without erasing history", () => {
 
 test("progress: unknown fact is initialized properly", () => {
   const progress = createInitialMultiplicationProgress();
-  assert(!progress.facts["7x8"], "fact does not exist yet");
+  assertEqual(progress.facts["7x8"].attempts, 0, "fact starts with default memory");
 
   const result = recordMultiplicationAnswer(progress, makeQuestion(7, 8), {
     value: 56,
@@ -114,4 +116,13 @@ test("progress: unknown fact is initialized properly", () => {
   assertEqual(fact.attempts, 1);
   assertEqual(fact.successes, 1);
   assertEqual(fact.currentStreak, 1);
+});
+
+test("progress: every fact has a complete default memory", () => {
+  const progress = createInitialMultiplicationProgress();
+  const fact = normalizeFactProgress(progress.facts["6x7"]);
+
+  assertEqual(Object.keys(progress.facts).length, 81);
+  assertEqual(fact.needsPractice, false);
+  assert(Array.isArray(fact.recentResults), "recent results list exists");
 });

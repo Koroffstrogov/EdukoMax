@@ -164,18 +164,28 @@ function getCandidateFacts(progress, options) {
 }
 
 function getCandidateTables(progress, options) {
-  if (isValidTable(options.table)) {
-    return [Number(options.table)];
+  const unlockedTables = getUnlockedTables(progress);
+  const requestedTable = Number(options.table);
+
+  if (isValidTable(requestedTable) && unlockedTables.includes(requestedTable)) {
+    return [requestedTable];
   }
 
   if (Array.isArray(options.tables)) {
     const optionTables = options.tables.map(Number).filter(isValidTable);
+    const playableTables = TABLES.filter((table) => {
+      return optionTables.includes(table) && unlockedTables.includes(table);
+    });
 
-    if (optionTables.length > 0) {
-      return TABLES.filter((table) => optionTables.includes(table));
+    if (playableTables.length > 0) {
+      return playableTables;
     }
   }
 
+  return unlockedTables;
+}
+
+function getUnlockedTables(progress) {
   const unlockedTables = Array.isArray(progress?.unlockedTables)
     ? progress.unlockedTables.map(Number).filter(isValidTable)
     : [];

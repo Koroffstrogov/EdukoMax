@@ -99,3 +99,20 @@ test("generator: prioritizes facts with many errors over untouched facts", () =>
   // The fact with many errors should be prioritized
   assertEqual(chosen.id, "2x3", "prioritizes error-heavy fact");
 });
+
+test("generator: ignores locked table even when requested", () => {
+  const progress = makeProgress([2], {});
+  const chosen = choosePriorityMultiplication(progress, { table: 7 });
+
+  assertEqual(chosen.table, 2, "locked table 7 is not selected");
+});
+
+test("generator: only chooses among unlocked requested tables", () => {
+  const progress = makeProgress([2, 5], {});
+  const question = generateMultiplicationQuestion(progress, {
+    mode: "direct-answer",
+    tables: [5, 7]
+  });
+
+  assertEqual(question.table, 5, "table 7 ignored because it is locked");
+});

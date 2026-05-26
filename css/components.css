@@ -333,6 +333,18 @@ button.subject-card:hover,
     linear-gradient(135deg, var(--color-primary), var(--color-warning));
 }
 
+.premium-pack-card {
+  min-height: 280px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.76)),
+    radial-gradient(circle at top right, var(--color-warning), transparent 34%),
+    linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+}
+
+.premium-mode-card {
+  min-height: 224px;
+}
+
 .shop-card h3 {
   margin-bottom: var(--space-1);
 }
@@ -456,7 +468,33 @@ button.subject-card:active {
   text-align: right;
 }
 
-.theme-button {
+.leaderboard-list {
+  display: grid;
+  gap: var(--space-3);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.leaderboard-list li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: var(--space-3);
+  align-items: center;
+  min-height: 48px;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-soft);
+  font-weight: 900;
+}
+
+.leaderboard-list small {
+  color: var(--color-muted);
+  font-weight: 900;
+}
+
+.theme-button,
+.theme-card {
   display: grid;
   gap: var(--space-2);
   min-height: 132px;
@@ -467,9 +505,61 @@ button.subject-card:active {
   text-align: left;
 }
 
-.theme-button.is-active {
+.theme-button.is-active,
+.theme-card.is-active {
   border-color: var(--color-primary);
   box-shadow: var(--shadow-button);
+}
+
+.theme-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 250px;
+  border-radius: var(--radius-md);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.78)),
+    linear-gradient(135deg, var(--swatch-a), var(--swatch-b), var(--swatch-c));
+}
+
+.theme-card.is-locked {
+  border-color: color-mix(in srgb, var(--swatch-b) 38%, white);
+}
+
+.theme-card h3 {
+  margin-bottom: var(--space-1);
+}
+
+.theme-preview {
+  display: grid;
+  grid-template-columns: 64px 1fr 1fr 1fr;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.theme-preview span {
+  display: grid;
+  width: 64px;
+  height: 64px;
+  place-items: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--swatch-a), var(--swatch-b));
+  box-shadow: var(--shadow-button);
+  font-size: var(--font-xl);
+}
+
+.theme-preview i {
+  display: block;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--swatch-c);
+}
+
+.theme-preview i:nth-child(3) {
+  background: var(--swatch-b);
+}
+
+.theme-preview i:nth-child(4) {
+  background: var(--swatch-d);
 }
 
 .theme-swatch {

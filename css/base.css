@@ -12,9 +12,7 @@ body {
   min-height: 100vh;
   margin: 0;
   color: var(--color-ink);
-  background:
-    linear-gradient(180deg, var(--color-bg-strong) 0%, var(--color-bg) 44%),
-    var(--color-bg);
+  background: var(--theme-bg, linear-gradient(180deg, var(--color-bg-strong) 0%, var(--color-bg) 44%), var(--color-bg));
 }
 
 button,

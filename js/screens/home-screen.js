@@ -22,6 +22,9 @@ export function renderHomeView(state) {
             <button class="button button-primary" type="button" data-route="multiplication">
               Ouvrir les multiplications
             </button>
+            <button class="button button-secondary" type="button" data-route="modes">
+              Modes spéciaux
+            </button>
             <button class="button button-secondary" type="button" data-route="collection">
               Ma collection (${collectionStats.percent}%)
             </button>

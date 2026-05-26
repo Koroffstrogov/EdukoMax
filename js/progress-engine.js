@@ -1,6 +1,7 @@
 import {
   INITIAL_UNLOCKED_TABLES,
   TABLE_UNLOCK_ORDER,
+  MULTIPLICATION_FACTS,
   getFactById,
   getFactId,
   isValidFactor,
@@ -9,7 +10,8 @@ import {
 import {
   calculateFactMastery,
   calculateTableMastery,
-  createDefaultFactProgress
+  createDefaultFactProgress,
+  doesFactNeedPractice
 } from "./mastery-engine.js";
 import {
   INITIAL_UNLOCKED_MODES,
@@ -23,7 +25,7 @@ export function createInitialMultiplicationProgress() {
     mixedModeUnlocked: false,
     unlockedModes: [...INITIAL_UNLOCKED_MODES],
     tablePoints: normalizeTablePoints({}),
-    facts: {}
+    facts: createInitialFactMap()
   };
 }
 
@@ -55,6 +57,7 @@ export function recordMultiplicationAnswer(progress, question, answerDetails = {
   const updatedFact = updateFactProgress(factProgress, isCorrect, answerDetails, answeredAt);
 
   updatedFact.mastery = calculateFactMastery(updatedFact, new Date(answeredAt));
+  updatedFact.needsPractice = doesFactNeedPractice(updatedFact);
   nextProgress.facts[fact.id] = updatedFact;
 
   return {
@@ -123,7 +126,8 @@ export function normalizeFactProgress(factProgress) {
     recentResults: normalizeRecentResults(factProgress.recentResults),
     lastAnsweredAt: normalizeNullableString(factProgress.lastAnsweredAt),
     averageResponseMs: normalizeNullableCount(factProgress.averageResponseMs),
-    mastery: clampScore(factProgress.mastery)
+    mastery: clampScore(factProgress.mastery),
+    needsPractice: Boolean(factProgress.needsPractice)
   };
 }
 
@@ -189,16 +193,18 @@ function updateAverageResponseMs(factProgress, responseMs) {
 }
 
 function normalizeFactMap(facts) {
-  if (!isPlainObject(facts)) {
-    return {};
-  }
+  const source = isPlainObject(facts) ? facts : {};
 
-  return Object.entries(facts).reduce((cleanFacts, [factId, factProgress]) => {
-    if (getFactById(factId)) {
-      cleanFacts[factId] = normalizeFactProgress(factProgress);
-    }
-
+  return MULTIPLICATION_FACTS.reduce((cleanFacts, fact) => {
+    cleanFacts[fact.id] = normalizeFactProgress(source[fact.id]);
     return cleanFacts;
+  }, {});
+}
+
+function createInitialFactMap() {
+  return MULTIPLICATION_FACTS.reduce((facts, fact) => {
+    facts[fact.id] = createDefaultFactProgress();
+    return facts;
   }, {});
 }
 

@@ -12,6 +12,11 @@ export function renderMultiplicationView(state) {
           Tous les modes sont ouverts. Gagne des pièces dans les mondes déjà
           disponibles, puis achète la table que tu veux.
         </p>
+        <div class="action-row">
+          <button class="button button-secondary" type="button" data-route="modes">
+            Voir les modes spéciaux
+          </button>
+        </div>
       </div>
       ${renderCoinPill(shop.coins)}
     </section>

@@ -4,7 +4,9 @@ import {
   calculateFactMastery,
   calculateTableMastery,
   calculateFactPriority,
-  createDefaultFactProgress
+  createDefaultFactProgress,
+  doesFactNeedPractice,
+  getFactMemoryState
 } from "../js/mastery-engine.js";
 
 test("mastery: unseen fact has zero mastery", () => {
@@ -106,6 +108,19 @@ test("mastery: table can be mastered with 20+ attempts, 85%+ accuracy, <=3 recen
 test("mastery: priority is high for unseen facts", () => {
   const priority = calculateFactPriority(null);
   assertEqual(priority, 100, "unseen fact gets max priority");
+});
+
+test("mastery: memory state separates easy, hesitant and struggling facts", () => {
+  const easy = makeFact(8, 8, 0);
+  const hesitant = { ...makeFact(5, 5, 0), currentStreak: 1, averageResponseMs: 4200 };
+  const struggling = { ...makeFact(6, 2, 4), currentStreak: 0 };
+
+  assertEqual(getFactMemoryState(easy), "easy");
+  assertEqual(getFactMemoryState(hesitant), "hesitating");
+  assertEqual(getFactMemoryState(struggling), "struggling");
+  assertEqual(doesFactNeedPractice(easy), false);
+  assertEqual(doesFactNeedPractice(hesitant), true);
+  assertEqual(doesFactNeedPractice(struggling), true);
 });
 
 function makeFact(attempts, successes, errors) {

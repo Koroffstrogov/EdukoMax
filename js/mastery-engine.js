@@ -12,7 +12,8 @@ export function createDefaultFactProgress() {
     recentResults: [],
     lastAnsweredAt: null,
     averageResponseMs: null,
-    mastery: 0
+    mastery: 0,
+    needsPractice: false
   };
 }
 
@@ -86,8 +87,40 @@ export function calculateFactPriority(factProgress, now = new Date()) {
   const ageBoost = calculateAgeBoost(fact.lastAnsweredAt, now);
   const lowPracticeBoost = Math.max(0, 4 - fact.attempts) * 8;
   const streakEase = Math.min(fact.currentStreak * 3, 15);
+  const hesitationBoost = calculateHesitationBoost(fact.averageResponseMs);
+  const memoryBoost = getMemoryPriorityBoost(getFactMemoryState(fact));
+  const practiceBoost = fact.needsPractice ? 14 : 0;
 
-  return clampScore(masteryGap + recentErrorBoost + ageBoost + lowPracticeBoost - streakEase);
+  return clampScore(
+    masteryGap + recentErrorBoost + ageBoost + lowPracticeBoost +
+    hesitationBoost + memoryBoost + practiceBoost - streakEase
+  );
+}
+
+export function getFactMemoryState(factProgress) {
+  const fact = normalizeFactForMastery(factProgress);
+
+  if (fact.attempts === 0) {
+    return "new";
+  }
+
+  const accuracy = fact.successes / fact.attempts;
+  const recentErrors = countRecentErrors(fact.recentResults);
+
+  if (recentErrors >= 2 || accuracy < 0.65) {
+    return "struggling";
+  }
+
+  if (isSlowFact(fact) || accuracy < 0.85 || fact.currentStreak < 2) {
+    return "hesitating";
+  }
+
+  return "easy";
+}
+
+export function doesFactNeedPractice(factProgress) {
+  const state = getFactMemoryState(factProgress);
+  return state === "struggling" || state === "hesitating";
 }
 
 export function getRecentTableResults(table, multiplicationProgress) {
@@ -178,6 +211,22 @@ function calculateAgeBoost(lastAnsweredAt, now) {
   }
 
   return Math.min(days * 2, 30);
+}
+
+function calculateHesitationBoost(averageResponseMs) {
+  if (!Number.isFinite(averageResponseMs)) {
+    return 0;
+  }
+
+  return Math.min(Math.max(averageResponseMs - 2500, 0) / 120, 18);
+}
+
+function getMemoryPriorityBoost(state) {
+  return { struggling: 28, hesitating: 14, easy: -18, new: 0 }[state] || 0;
+}
+
+function isSlowFact(fact) {
+  return Number.isFinite(fact.averageResponseMs) && fact.averageResponseMs >= 3500;
 }
 
 function getDaysSince(dateText, now) {

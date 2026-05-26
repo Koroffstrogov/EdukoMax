@@ -2,6 +2,11 @@ export const ROUTES = Object.freeze({
   home: "home",
   multiplication: "multiplication",
   multiplicationSession: "multiplication-session",
+  modes: "modes",
+  modesCompetitive: "modes/competitive",
+  modesChill: "modes/chill",
+  modesScience: "modes/science",
+  leaderboard: "leaderboard",
   collection: "collection",
   settings: "settings"
 });
@@ -25,7 +30,7 @@ export function navigate(route) {
 }
 
 export function getRouteFromHash(hash = window.location.hash) {
-  const route = hash.replace("#", "").trim();
+  const route = hash.replace("#", "").replace(/^\/+/, "").trim();
   return normalizeRoute(route);
 }
 

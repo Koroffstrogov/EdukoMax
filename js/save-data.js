@@ -1,15 +1,8 @@
-import {
-  INITIAL_UNLOCKED_TABLES,
-  TABLE_UNLOCK_ORDER,
-  getFactById,
-  isValidTable
-} from "./multiplication-data.js";
-import {
-  INITIAL_OWNED_THEMES,
-  normalizeOwnedThemes,
-  normalizeTablePoints,
-  normalizeUnlockedModes
-} from "./reward-engine.js";
+import { INITIAL_OWNED_THEMES, normalizeOwnedThemes } from "./reward-engine.js";
+import { normalizeMultiplicationProgress } from "./progress-engine.js";
+import { DEFAULT_THEME_ID, normalizeThemeId } from "./theme-data.js";
+import { normalizePremiumModes } from "./premium-modes/mode-pack-engine.js";
+import { normalizeLeaderboards } from "./premium-modes/competitive-engine.js";
 
 export const CURRENT_VERSION = 1;
 export const PROFILE_ICONS = Object.freeze(["🧒", "👧", "👦", "🧑", "🦸", "🧙", "🚀", "⭐"]);
@@ -17,7 +10,7 @@ export const PROFILE_ICONS = Object.freeze(["🧒", "👧", "👦", "🧑", "�
 export function createDefaultSave(options = {}) {
   const now = new Date().toISOString();
   const profile = createProfileRecord(options, null, now);
-  return buildRuntimeSave([profile], profile.id, now);
+  return buildRuntimeSave([profile], profile.id, now, normalizeLeaderboards({}));
 }
 
 export function normalizeSave(saveData) {
@@ -33,14 +26,15 @@ export function normalizeSave(saveData) {
   return buildRuntimeSave(
     syncedProfiles,
     syncedProfiles.some((profile) => profile.id === activeId) ? activeId : syncedProfiles[0].id,
-    normalizeString(saveData.updatedAt, now)
+    normalizeString(saveData.updatedAt, now),
+    normalizeLeaderboards(saveData.leaderboards)
   );
 }
 
 export function addProfile(saveData, details = {}) {
   const save = normalizeSave(saveData);
   const profile = createProfileRecord(details, null, new Date().toISOString());
-  return buildRuntimeSave([...save.profiles, profile], profile.id, profile.updatedAt);
+  return buildRuntimeSave([...save.profiles, profile], profile.id, profile.updatedAt, save.leaderboards);
 }
 
 export function activateProfile(saveData, profileId) {
@@ -48,7 +42,7 @@ export function activateProfile(saveData, profileId) {
   const activeId = save.profiles.some((profile) => profile.id === profileId)
     ? profileId
     : save.activeProfileId;
-  return buildRuntimeSave(save.profiles, activeId, new Date().toISOString());
+  return buildRuntimeSave(save.profiles, activeId, new Date().toISOString(), save.leaderboards);
 }
 
 export function removeProfile(saveData, profileId) {
@@ -60,7 +54,7 @@ export function removeProfile(saveData, profileId) {
   }
 
   const activeId = save.activeProfileId === profileId ? profiles[0].id : save.activeProfileId;
-  return buildRuntimeSave(profiles, activeId, new Date().toISOString());
+  return buildRuntimeSave(profiles, activeId, new Date().toISOString(), save.leaderboards);
 }
 
 export function updateActiveProfileDetails(saveData, details = {}) {
@@ -73,7 +67,7 @@ export function updateActiveProfileDetails(saveData, details = {}) {
     return updateProfileRecord(profile, details, new Date().toISOString());
   });
 
-  return buildRuntimeSave(profiles, save.activeProfileId, new Date().toISOString());
+  return buildRuntimeSave(profiles, save.activeProfileId, new Date().toISOString(), save.leaderboards);
 }
 
 function normalizeProfiles(saveData, now) {
@@ -99,7 +93,8 @@ function syncRuntimeProfile(profiles, activeId, source, now) {
       id: profile.id,
       name: source.profile?.name || profile.name,
       icon: source.profile?.icon || profile.icon,
-      favoriteTheme: source.settings?.theme || source.profile?.favoriteTheme || profile.favoriteTheme,
+      favoriteTheme: source.settings?.theme || source.cosmetics?.activeTheme ||
+        source.profile?.favoriteTheme || profile.favoriteTheme,
       createdAt: source.profile?.createdAt || profile.createdAt,
       updatedAt: now
     }, source, now);
@@ -107,10 +102,15 @@ function syncRuntimeProfile(profiles, activeId, source, now) {
 }
 
 function createProfileRecord(details = {}, payload = null, now) {
-  const theme = normalizeTheme(details.favoriteTheme || payload?.settings?.theme || "sunny");
+  const theme = normalizeTheme(details.favoriteTheme || payload?.settings?.theme ||
+    payload?.cosmetics?.activeTheme || DEFAULT_THEME_ID);
   const settings = normalizeSettings(payload?.settings, theme);
+  const cosmetics = normalizeCosmetics(payload?.cosmetics, theme);
+  const rewards = normalizeRewards(payload?.rewards, theme, cosmetics.ownedThemes);
 
   settings.theme = theme;
+  cosmetics.activeTheme = theme;
+  cosmetics.ownedThemes = normalizeOwnedThemes([...cosmetics.ownedThemes, ...rewards.ownedThemes], theme);
 
   return {
     id: normalizeId(details.id),
@@ -120,8 +120,10 @@ function createProfileRecord(details = {}, payload = null, now) {
     createdAt: normalizeString(details.createdAt || payload?.profile?.createdAt, now),
     updatedAt: normalizeString(details.updatedAt || payload?.updatedAt, now),
     settings,
+    cosmetics,
     progress: normalizeProgress(payload?.progress),
-    rewards: normalizeRewards(payload?.rewards, theme),
+    rewards,
+    premiumModes: normalizePremiumModes(payload?.premiumModes),
     sessions: normalizeSessions(payload?.sessions),
     collectibles: normalizeCollectiblesSection(payload?.collectibles),
     stats: normalizeStatsSection(payload?.stats, payload?.sessions)
@@ -137,6 +139,11 @@ function updateProfileRecord(profile, details, now) {
     favoriteTheme: theme,
     updatedAt: now,
     settings: { ...profile.settings, theme },
+    cosmetics: normalizeCosmetics({
+      ...profile.cosmetics,
+      activeTheme: theme,
+      ownedThemes: [...profile.cosmetics.ownedThemes, theme]
+    }, theme),
     rewards: normalizeRewards({
       ...profile.rewards,
       ownedThemes: [...profile.rewards.ownedThemes, theme]
@@ -144,7 +151,7 @@ function updateProfileRecord(profile, details, now) {
   };
 }
 
-function buildRuntimeSave(profiles, activeProfileId, updatedAt) {
+function buildRuntimeSave(profiles, activeProfileId, updatedAt, leaderboards = {}) {
   const active = profiles.find((profile) => profile.id === activeProfileId) || profiles[0];
   return {
     version: CURRENT_VERSION,
@@ -152,11 +159,14 @@ function buildRuntimeSave(profiles, activeProfileId, updatedAt) {
     profiles: profiles.map(cloneData),
     profile: pickProfileMeta(active),
     settings: cloneData(active.settings),
+    cosmetics: cloneData(active.cosmetics),
     progress: cloneData(active.progress),
     rewards: cloneData(active.rewards),
+    premiumModes: cloneData(active.premiumModes),
     sessions: cloneData(active.sessions),
     collectibles: cloneData(active.collectibles),
     stats: cloneData(active.stats),
+    leaderboards: cloneData(normalizeLeaderboards(leaderboards)),
     updatedAt
   };
 }
@@ -179,6 +189,13 @@ function normalizeSettings(settings, theme) {
   };
 }
 
+function normalizeCosmetics(cosmetics, theme) {
+  return {
+    ownedThemes: normalizeOwnedThemes(cosmetics?.ownedThemes || INITIAL_OWNED_THEMES, theme),
+    activeTheme: normalizeTheme(cosmetics?.activeTheme || theme)
+  };
+}
+
 function normalizeProgress(progress) {
   return {
     multiplication: normalizeMultiplicationProgress(progress?.multiplication),
@@ -187,63 +204,16 @@ function normalizeProgress(progress) {
   };
 }
 
-function normalizeMultiplicationProgress(progress) {
-  return {
-    unlockedTables: normalizeUnlockedTables(progress?.unlockedTables),
-    mixedModeUnlocked: Boolean(progress?.mixedModeUnlocked),
-    unlockedModes: normalizeUnlockedModes(progress?.unlockedModes, progress?.mixedModeUnlocked),
-    tablePoints: normalizeTablePoints(progress?.tablePoints),
-    facts: normalizeMultiplicationFacts(progress?.facts)
-  };
-}
-
-function normalizeUnlockedTables(tables) {
-  const requestedTables = Array.isArray(tables) ? tables : [];
-  const cleanTables = [...INITIAL_UNLOCKED_TABLES, ...requestedTables]
-    .map(Number)
-    .filter(isValidTable);
-
-  return TABLE_UNLOCK_ORDER.filter((table) => cleanTables.includes(table));
-}
-
-function normalizeMultiplicationFacts(facts) {
-  if (!isPlainObject(facts)) {
-    return {};
-  }
-
-  return Object.entries(facts).reduce((cleanFacts, [factId, factProgress]) => {
-    if (getFactById(factId)) {
-      cleanFacts[factId] = normalizeFactProgress(factProgress);
-    }
-    return cleanFacts;
-  }, {});
-}
-
-function normalizeFactProgress(factProgress) {
-  const attempts = normalizeCount(factProgress?.attempts);
-  const successes = Math.min(normalizeCount(factProgress?.successes), attempts);
-  const errors = Math.min(normalizeCount(factProgress?.errors), attempts);
-
-  return {
-    attempts,
-    successes,
-    errors,
-    currentStreak: normalizeCount(factProgress?.currentStreak),
-    bestStreak: normalizeCount(factProgress?.bestStreak),
-    recentResults: normalizeRecentResults(factProgress?.recentResults),
-    lastAnsweredAt: normalizeNullableString(factProgress?.lastAnsweredAt),
-    averageResponseMs: normalizeNullableCount(factProgress?.averageResponseMs),
-    mastery: clampScore(factProgress?.mastery)
-  };
-}
-
-function normalizeRewards(rewards, activeTheme) {
+function normalizeRewards(rewards, activeTheme, cosmeticThemes = null) {
   return {
     xp: normalizeCount(rewards?.xp),
     stars: normalizeCount(rewards?.stars),
     coins: normalizeCount(rewards?.coins),
     totalCoinsEarned: normalizeCount(rewards?.totalCoinsEarned),
-    ownedThemes: normalizeOwnedThemes(rewards?.ownedThemes || INITIAL_OWNED_THEMES, activeTheme),
+    ownedThemes: normalizeOwnedThemes(
+      rewards?.ownedThemes || cosmeticThemes || INITIAL_OWNED_THEMES,
+      activeTheme
+    ),
     purchases: normalizePurchases(rewards?.purchases),
     collectibles: Array.isArray(rewards?.collectibles) ? rewards.collectibles : []
   };
@@ -299,22 +269,6 @@ function normalizeStatsSection(stats, sessions) {
   };
 }
 
-function normalizeRecentResults(recentResults) {
-  return Array.isArray(recentResults)
-    ? recentResults.map(normalizeRecentResult).filter(Boolean).slice(-10)
-    : [];
-}
-
-function normalizeRecentResult(result) {
-  if (typeof result === "boolean") {
-    return { correct: result, answeredAt: null };
-  }
-
-  return isPlainObject(result)
-    ? { correct: Boolean(result.correct), answeredAt: normalizeNullableString(result.answeredAt) }
-    : null;
-}
-
 function uniqueProfiles(profiles) {
   const seen = new Set();
   return profiles.map((profile) => {
@@ -337,9 +291,7 @@ function normalizeProfileIcon(value) {
   return PROFILE_ICONS.includes(value) ? value : PROFILE_ICONS[0];
 }
 
-function normalizeTheme(value) {
-  return ["sunny", "ocean", "berry"].includes(value) ? value : "sunny";
-}
+function normalizeTheme(value) { return normalizeThemeId(value); }
 
 function normalizeId(value) {
   return typeof value === "string" && value.trim() !== "" ? value : createProfileId();
@@ -351,10 +303,6 @@ function createProfileId() {
 
 function normalizeCount(value) {
   return Number.isFinite(value) && value >= 0 ? Math.round(value) : 0;
-}
-
-function normalizeNullableCount(value) {
-  return Number.isFinite(value) && value >= 0 ? Math.round(value) : null;
 }
 
 function normalizeString(value, fallback) {
@@ -369,10 +317,6 @@ function normalizeStringArray(arr) {
   return Array.isArray(arr)
     ? arr.filter((item) => typeof item === "string" && item.length > 0)
     : [];
-}
-
-function clampScore(value) {
-  return Number.isFinite(value) ? Math.max(0, Math.min(100, Math.round(value))) : 0;
 }
 
 function cloneData(data) {

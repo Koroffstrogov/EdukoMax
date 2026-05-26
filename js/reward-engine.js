@@ -6,6 +6,7 @@ import {
   isValidTable
 } from "./multiplication-data.js";
 import { QUESTION_MODES } from "./multiplication-generator.js";
+import { DEFAULT_OWNED_THEME_IDS, getThemeShopItems, normalizeThemeId } from "./theme-data.js";
 
 export const SESSION_MODES = Object.freeze({
   directAnswer: QUESTION_MODES.directAnswer,
@@ -16,7 +17,7 @@ export const SESSION_MODES = Object.freeze({
 });
 
 export const INITIAL_UNLOCKED_MODES = Object.freeze(Object.values(SESSION_MODES));
-export const INITIAL_OWNED_THEMES = Object.freeze(["sunny"]);
+export const INITIAL_OWNED_THEMES = DEFAULT_OWNED_THEME_IDS;
 
 export const TABLE_SHOP_ITEMS = Object.freeze([
   tableItem(3, 40, "🌿", "Jardin des Trois"),
@@ -33,12 +34,6 @@ const MODE_SHOP_ITEMS = Object.freeze([
   modeItem(SESSION_MODES.visualGroups, "Groupes visuels", "Compte les petits groupes.", 0),
   modeItem(SESSION_MODES.missingFactor, "Facteur manquant", "Trouve le nombre caché.", 0),
   modeItem(SESSION_MODES.mixed, "Mix", "Toutes les formes en session.", 0)
-]);
-
-const THEME_SHOP_ITEMS = Object.freeze([
-  themeItem("sunny", "Soleil", "Clair, chaud et joyeux.", 0),
-  themeItem("ocean", "Océan", "Frais, calme et concentré.", 8),
-  themeItem("berry", "Fruits", "Vif, doux et pétillant.", 10)
 ]);
 
 export function createInitialTablePoints() {
@@ -87,7 +82,7 @@ export function getShopSummary(save) {
     totalCorrect: getTotalCorrectAnswers(normalizedSave),
     tables: getTableCatalog().map((item) => getTableShopState(normalizedSave, item)),
     modes: MODE_SHOP_ITEMS.map((item) => getShopItemState(normalizedSave, "mode", item)),
-    themes: THEME_SHOP_ITEMS.map((item) => getShopItemState(normalizedSave, "theme", item))
+    themes: getThemeShopItems().map((item) => getShopItemState(normalizedSave, "theme", item))
   };
 }
 
@@ -148,7 +143,7 @@ export function buyTable(save, table) {
 
 export function isThemeOwned(save, themeId) {
   return normalizeOwnedThemes(save?.rewards?.ownedThemes, save?.settings?.theme)
-    .includes(themeId);
+    .includes(normalizeThemeId(themeId));
 }
 
 export function normalizeUnlockedModes(modeIds, mixedModeUnlocked = false) {
@@ -156,10 +151,10 @@ export function normalizeUnlockedModes(modeIds, mixedModeUnlocked = false) {
 }
 
 export function normalizeOwnedThemes(themeIds, activeTheme = "sunny") {
-  const requestedThemes = Array.isArray(themeIds) ? themeIds : [];
-  const themes = [...INITIAL_OWNED_THEMES, activeTheme, ...requestedThemes];
+  const requestedThemes = Array.isArray(themeIds) ? themeIds.map(normalizeThemeId) : [];
+  const themes = [...INITIAL_OWNED_THEMES, normalizeThemeId(activeTheme), ...requestedThemes];
 
-  return THEME_SHOP_ITEMS
+  return getThemeShopItems()
     .map((item) => item.id)
     .filter((themeId) => themes.includes(themeId));
 }
@@ -229,13 +224,18 @@ function applyOwnership(save, itemType, item) {
     ...save.rewards.ownedThemes,
     item.id
   ], save.settings.theme);
+  save.cosmetics = {
+    ...(save.cosmetics || {}),
+    ownedThemes: save.rewards.ownedThemes,
+    activeTheme: save.cosmetics?.activeTheme || save.settings.theme
+  };
 }
 
 function findShopItem(itemType, itemId) {
   const list = {
     table: getTableCatalog(),
     mode: MODE_SHOP_ITEMS,
-    theme: THEME_SHOP_ITEMS
+    theme: getThemeShopItems()
   }[itemType] || [];
 
   return list.find((item) => String(item.id) === String(itemId)) || null;
@@ -263,9 +263,14 @@ function normalizeShopSave(save) {
   nextSave.rewards.coins = normalizeCount(nextSave.rewards.coins);
   nextSave.rewards.totalCoinsEarned = normalizeCount(nextSave.rewards.totalCoinsEarned);
   nextSave.rewards.ownedThemes = normalizeOwnedThemes(
-    nextSave.rewards.ownedThemes,
+    nextSave.rewards.ownedThemes || nextSave.cosmetics?.ownedThemes,
     nextSave.settings.theme
   );
+  nextSave.cosmetics = {
+    ...(nextSave.cosmetics || {}),
+    ownedThemes: nextSave.rewards.ownedThemes,
+    activeTheme: nextSave.cosmetics?.activeTheme || nextSave.settings.theme
+  };
   nextSave.rewards.purchases = Array.isArray(nextSave.rewards.purchases)
     ? nextSave.rewards.purchases
     : [];
@@ -365,10 +370,6 @@ function tableItem(table, price, icon, worldName) {
 
 function modeItem(id, label, description, cost, requirementType = null, requirementValue = 0) {
   return Object.freeze({ id, label, description, cost, requirementType, requirementValue });
-}
-
-function themeItem(id, label, description, cost) {
-  return Object.freeze({ id, label, description, cost });
 }
 
 function getFreeTableIcon(table) {

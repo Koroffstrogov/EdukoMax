@@ -1,5 +1,6 @@
 import { PROFILE_ICONS } from "../save-data.js";
 import { getAvailableThemes } from "../theme-manager.js";
+import { DEFAULT_OWNED_THEME_IDS, DEFAULT_THEME_ID } from "../theme-data.js";
 
 export function renderProfileControls(state) {
   const activeProfile = state.save.profile;
@@ -35,14 +36,14 @@ function renderProfilePanel(state) {
       </div>
       <div class="profile-section">
         <h2>Mon profil</h2>
-        ${renderProfileForm("update", state.save.profile)}
+        ${renderProfileForm("update", state.save.profile, state.save.rewards?.ownedThemes)}
       </div>
       <div class="profile-create-box">
         <button class="button button-secondary" type="button" data-profile-create-toggle>
           Nouveau profil
         </button>
         <div data-profile-create-panel hidden>
-          ${renderProfileForm("create")}
+          ${renderProfileForm("create", {}, DEFAULT_OWNED_THEME_IDS)}
         </div>
       </div>
     </section>
@@ -77,13 +78,17 @@ function renderProfileRow(profile, activeId) {
   `;
 }
 
-function renderProfileForm(mode, profile = {}) {
+function renderProfileForm(mode, profile = {}, ownedThemes = DEFAULT_OWNED_THEME_IDS) {
   const isUpdate = mode === "update";
   const formAttr = isUpdate ? "data-profile-update-form" : "data-profile-create-form";
   const submitLabel = isUpdate ? "Enregistrer" : "Créer";
   const name = isUpdate ? profile.name : "";
   const icon = isUpdate ? profile.icon : PROFILE_ICONS[0];
-  const favoriteTheme = isUpdate ? profile.favoriteTheme : "sunny";
+  const themes = getProfileThemeOptions(ownedThemes);
+  const preferredTheme = isUpdate ? profile.favoriteTheme : DEFAULT_THEME_ID;
+  const favoriteTheme = themes.some((theme) => theme.id === preferredTheme)
+    ? preferredTheme
+    : DEFAULT_THEME_ID;
 
   return `
     <form class="profile-form" ${formAttr}>
@@ -107,7 +112,7 @@ function renderProfileForm(mode, profile = {}) {
       <label>
         <span>Thème favori</span>
         <select name="favoriteTheme" ${isUpdate ? "data-profile-live" : ""}>
-          ${getAvailableThemes()
+          ${themes
             .map((theme) => option(theme.id, theme.label, favoriteTheme))
             .join("")}
         </select>
@@ -115,6 +120,11 @@ function renderProfileForm(mode, profile = {}) {
       <button class="button button-primary" type="submit">${submitLabel}</button>
     </form>
   `;
+}
+
+function getProfileThemeOptions(ownedThemes) {
+  const owned = Array.isArray(ownedThemes) ? ownedThemes : DEFAULT_OWNED_THEME_IDS;
+  return getAvailableThemes().filter((theme) => theme.isDefault || owned.includes(theme.id));
 }
 
 function option(value, label, selectedValue) {

@@ -35,6 +35,9 @@ test("storage: absent save creates a valid default state", () => {
     assert(save.progress.multiplication.unlockedModes.includes("visual-groups"), "visual groups unlocked");
     assert(save.progress.multiplication.unlockedModes.includes("missing-factor"), "missing factor unlocked");
     assert(save.progress.multiplication.unlockedModes.includes("mixed"), "mix unlocked");
+    assert(save.cosmetics.ownedThemes.includes("kawaii-pop"), "kawaii-pop owned");
+    assert(save.cosmetics.ownedThemes.includes("cosmic-cats"), "cosmic-cats owned");
+    assertEqual(save.cosmetics.activeTheme, "kawaii-pop", "default cosmetic theme");
     assertEqual(save.rewards.coins, 0);
     assertEqual(save.sessions.completed, 0);
   });
@@ -44,21 +47,26 @@ test("storage: profile switch restores profile-specific progress", () => {
   const firstSave = createDefaultSave({ name: "Lina", icon: "👧" });
   firstSave.rewards.coins = 12;
   firstSave.progress.multiplication.unlockedTables.push(3);
+  firstSave.progress.multiplication.facts["3x4"].attempts = 4;
+  firstSave.progress.multiplication.facts["3x4"].needsPractice = true;
 
   const secondSave = addProfile(firstSave, {
     name: "Noé",
     icon: "🚀",
-    favoriteTheme: "ocean"
+    favoriteTheme: "cosmic-cats"
   });
 
   assertEqual(secondSave.profile.name, "Noé");
   assertEqual(secondSave.rewards.coins, 0, "new profile starts fresh");
-  assertEqual(secondSave.settings.theme, "ocean", "favorite theme applied");
+  assertEqual(secondSave.settings.theme, "cosmic-cats", "favorite theme applied");
+  assertEqual(secondSave.progress.multiplication.facts["3x4"].attempts, 0, "new profile has fresh fact memory");
 
   const restoredFirst = activateProfile(secondSave, firstSave.activeProfileId);
   assertEqual(restoredFirst.profile.name, "Lina");
   assertEqual(restoredFirst.rewards.coins, 12, "coins restored");
   assert(restoredFirst.progress.multiplication.unlockedTables.includes(3), "table restored");
+  assertEqual(restoredFirst.progress.multiplication.facts["3x4"].attempts, 4, "fact memory restored");
+  assertEqual(restoredFirst.progress.multiplication.facts["3x4"].needsPractice, true, "practice flag restored");
 });
 
 test("storage: deleting the active profile selects another profile", () => {
@@ -79,9 +87,11 @@ test("storage: partial save is normalized", () => {
       rewards: { coins: 5 }
     }));
     const save = loadSave();
-    assertEqual(save.settings.theme, "ocean", "theme preserved");
+    assertEqual(save.settings.theme, "cosmic-cats", "legacy theme mapped");
+    assert(save.rewards.ownedThemes.includes("cosmic-cats"), "mapped theme owned");
     assertEqual(save.rewards.coins, 5, "coins preserved");
     assert(Array.isArray(save.progress.multiplication.unlockedTables), "tables normalized");
+    assertEqual(Object.keys(save.progress.multiplication.facts).length, 81, "all facts initialized");
   });
 });
 
@@ -100,7 +110,8 @@ test("storage: chosen theme is preserved across save/load", () => {
     save.settings.theme = "berry";
     saveGame(save);
     const loaded = loadSave();
-    assertEqual(loaded.settings.theme, "berry");
+    assertEqual(loaded.settings.theme, "magic-bakery");
+    assert(loaded.rewards.ownedThemes.includes("magic-bakery"), "legacy active theme owned");
   });
 });
 
@@ -109,6 +120,7 @@ test("storage: active profile payload is saved inside profiles", () => {
     const save = createDefaultSave({ name: "Mila", icon: "🚀" });
     save.rewards.coins = 23;
     save.progress.multiplication.unlockedTables.push(3);
+    save.premiumModes.ownedPacks.push("chill-pack");
 
     saveGame(save);
     const loaded = loadSave();
@@ -116,6 +128,7 @@ test("storage: active profile payload is saved inside profiles", () => {
 
     assertEqual(storedProfile.rewards.coins, 23);
     assert(storedProfile.progress.multiplication.unlockedTables.includes(3), "profile owns table 3");
+    assert(storedProfile.premiumModes.ownedPacks.includes("chill-pack"), "profile owns chill pack");
   });
 });
 
@@ -138,5 +151,6 @@ test("storage: fact progression is preserved", () => {
     assertEqual(loaded.progress.multiplication.facts["2x3"].attempts, 10);
     assertEqual(loaded.progress.multiplication.facts["2x3"].successes, 8);
     assertEqual(loaded.progress.multiplication.facts["2x3"].mastery, 72);
+    assertEqual(loaded.progress.multiplication.facts["2x3"].needsPractice, false);
   });
 });
