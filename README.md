@@ -87,6 +87,22 @@ Quand un profil est choisi, l'application recharge immédiatement la progression
 les pièces, les achats, la collection et le thème de ce profil. Une session en
 cours est arrêtée pour éviter d'écrire une réponse dans le mauvais profil.
 
+### Profil de test
+
+Pour les essais rapides, créer un nouveau profil nommé exactement `TesT`.
+Cette casse est volontaire et sensible à la casse.
+
+Au moment de sa création, ce profil reçoit :
+
+- toutes les tables de multiplication actives ;
+- tous les packs premium débloqués ;
+- toutes les cartes de collection acquises ;
+- tous les badges acquis.
+
+Renommer un profil existant en `TesT` ne déclenche pas ce remplissage. Il suffit
+de supprimer puis recréer ce profil de test quand il faut repartir d'un état
+plein.
+
 ## Progression multiplication
 
 Les tables disponibles vont de 2 à 10. Toutes les tables sont visibles dès le

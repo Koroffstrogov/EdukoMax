@@ -1,11 +1,15 @@
 import { INITIAL_OWNED_THEMES, normalizeOwnedThemes } from "./reward-engine.js";
+import { TABLES } from "./multiplication-data.js";
 import { normalizeMultiplicationProgress } from "./progress-engine.js";
 import { DEFAULT_THEME_ID, normalizeThemeId } from "./theme-data.js";
 import { normalizePremiumModes } from "./premium-modes/mode-pack-engine.js";
+import { getSpecialModePacks } from "./premium-modes/mode-pack-data.js";
 import { normalizeLeaderboards } from "./premium-modes/competitive-engine.js";
+import { BADGES, COLLECTIBLE_CARDS } from "./collectibles/collectible-data.js";
 
 export const CURRENT_VERSION = 1;
 export const PROFILE_ICONS = Object.freeze(["🧒", "👧", "👦", "🧑", "🦸", "🧙", "🚀", "⭐"]);
+const TEST_PROFILE_NAME = "TesT";
 
 export function createDefaultSave(options = {}) {
   const now = new Date().toISOString();
@@ -112,7 +116,7 @@ function createProfileRecord(details = {}, payload = null, now) {
   cosmetics.activeTheme = theme;
   cosmetics.ownedThemes = normalizeOwnedThemes([...cosmetics.ownedThemes, ...rewards.ownedThemes], theme);
 
-  return {
+  const profile = {
     id: normalizeId(details.id),
     name: normalizeProfileName(details.name || payload?.profile?.name),
     icon: normalizeProfileIcon(details.icon || payload?.profile?.icon),
@@ -128,6 +132,10 @@ function createProfileRecord(details = {}, payload = null, now) {
     collectibles: normalizeCollectiblesSection(payload?.collectibles),
     stats: normalizeStatsSection(payload?.stats, payload?.sessions)
   };
+
+  return shouldGrantTestProfilePerks(details, payload)
+    ? grantTestProfilePerks(profile)
+    : profile;
 }
 
 function updateProfileRecord(profile, details, now) {
@@ -266,6 +274,37 @@ function normalizeStatsSection(stats, sessions) {
     totalQuestionsAnswered: normalizeCount(stats?.totalQuestionsAnswered),
     perfectSessions: normalizeCount(stats?.perfectSessions),
     bestGlobalStreak: normalizeCount(stats?.bestGlobalStreak)
+  };
+}
+
+function shouldGrantTestProfilePerks(details, payload) {
+  return payload === null && normalizeProfileName(details.name) === TEST_PROFILE_NAME;
+}
+
+function grantTestProfilePerks(profile) {
+  const allCards = COLLECTIBLE_CARDS.map((card) => card.id);
+  const allBadges = BADGES.map((badge) => badge.id);
+  const allPacks = getSpecialModePacks().map((pack) => pack.id);
+
+  return {
+    ...profile,
+    progress: {
+      ...profile.progress,
+      multiplication: {
+        ...profile.progress.multiplication,
+        unlockedTables: [...TABLES],
+        selectedTables: [...TABLES]
+      }
+    },
+    premiumModes: {
+      ...profile.premiumModes,
+      ownedPacks: allPacks
+    },
+    collectibles: {
+      ...profile.collectibles,
+      cards: { owned: allCards, newlyUnlocked: [] },
+      badges: { owned: allBadges, newlyUnlocked: [] }
+    }
   };
 }
 

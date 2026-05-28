@@ -2,6 +2,7 @@ import { test } from "./test-runner.js";
 import { assert, assertEqual, assertDeepEqual } from "./test-utils.js";
 import { loadSave, saveGame, clearSave, createDefaultSave } from "../js/storage.js";
 import { activateProfile, addProfile, normalizeSave, removeProfile } from "../js/save-data.js";
+import { BADGES, COLLECTIBLE_CARDS } from "../js/collectibles/collectible-data.js";
 
 // Stub localStorage for test isolation
 function withCleanStorage(fn) {
@@ -69,6 +70,29 @@ test("storage: profile switch restores profile-specific progress", () => {
   assert(restoredFirst.progress.multiplication.selectedTables.includes(3), "table selection restored");
   assertEqual(restoredFirst.progress.multiplication.facts["3x4"].attempts, 4, "fact memory restored");
   assertEqual(restoredFirst.progress.multiplication.facts["3x4"].needsPractice, true, "practice flag restored");
+});
+
+test("storage: TesT profile starts with test unlocks", () => {
+  const save = addProfile(createDefaultSave({ name: "Lina" }), { name: "TesT" });
+
+  assertEqual(save.profile.name, "TesT");
+  assertEqual(save.progress.multiplication.selectedTables.length, 9, "all tables active");
+  assert(save.premiumModes.ownedPacks.includes("competitive-pack"), "competitive pack owned");
+  assert(save.premiumModes.ownedPacks.includes("chill-pack"), "chill pack owned");
+  assert(save.premiumModes.ownedPacks.includes("science-pack"), "science pack owned");
+  assert(save.premiumModes.ownedPacks.includes("magic-bracelets"), "bracelets pack owned");
+  assertEqual(save.collectibles.cards.owned.length, COLLECTIBLE_CARDS.length, "all cards owned");
+  assertEqual(save.collectibles.badges.owned.length, BADGES.length, "all badges owned");
+});
+
+test("storage: test profile trigger is case sensitive", () => {
+  const save = addProfile(createDefaultSave({ name: "Lina" }), { name: "test" });
+
+  assertEqual(save.profile.name, "test");
+  assertEqual(save.progress.multiplication.selectedTables.length, 3);
+  assertEqual(save.premiumModes.ownedPacks.length, 0);
+  assertEqual(save.collectibles.cards.owned.length, 0);
+  assertEqual(save.collectibles.badges.owned.length, 0);
 });
 
 test("storage: deleting the active profile selects another profile", () => {
