@@ -15,6 +15,7 @@ import {
   startMultiplicationSession,
   startPremiumSession,
   submitMultiplicationAnswer,
+  toggleMultiplicationTable,
   toggleProfilePanel,
   updateCollectionFilter,
   updateProfile,
@@ -24,7 +25,7 @@ import {
 } from "./state.js";
 import { navigate, ROUTES, startRouter } from "./router.js";
 import { applyTheme, isKnownTheme } from "./theme-manager.js";
-import { getPageTitle, renderAppShell } from "./screens/app-shell.js";
+import { getPageTitle, renderAppShell } from "./screens/app-shell.js?v=magic-bracelets-20260527";
 
 let autoAdvanceTimer = null;
 let lastRenderedCoins = null;
@@ -102,6 +103,15 @@ function handleAppClick(event, root) {
 
   if (buyTarget) {
     buyItem(buyTarget.dataset.buyType, buyTarget.dataset.buyId, root);
+    return;
+  }
+
+  const tableToggleTarget = event.target.closest("[data-toggle-table]");
+
+  if (tableToggleTarget) {
+    toggleMultiplicationTable(tableToggleTarget.dataset.toggleTable);
+    saveGame(getSaveSnapshot());
+    renderApp(root);
     return;
   }
 

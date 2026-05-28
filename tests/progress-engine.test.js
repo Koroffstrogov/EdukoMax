@@ -3,8 +3,13 @@ import { assert, assertEqual } from "./test-utils.js";
 import {
   recordMultiplicationAnswer,
   createInitialMultiplicationProgress,
-  normalizeFactProgress
+  normalizeFactProgress,
+  normalizeMultiplicationProgress
 } from "../js/progress-engine.js";
+import {
+  calculateTableSelectionBonus,
+  toggleSelectedTable
+} from "../js/table-selection.js";
 
 function makeQuestion(table = 3, factor = 4) {
   return {
@@ -125,4 +130,32 @@ test("progress: every fact has a complete default memory", () => {
   assertEqual(Object.keys(progress.facts).length, 81);
   assertEqual(fact.needsPractice, false);
   assert(Array.isArray(fact.recentResults), "recent results list exists");
+  assertEqual(fact.reviewIntervalDays, 0);
+  assertEqual(fact.retrievalStrength, 0);
+  assertEqual(fact.lastDifficulty, "new");
+});
+
+test("progress: new profile starts with tables 2, 5 and 10 selected", () => {
+  const progress = createInitialMultiplicationProgress();
+
+  assertEqual(progress.selectedTables.join(","), "2,5,10");
+});
+
+test("progress: legacy unlocked tables migrate into selectedTables", () => {
+  const progress = normalizeMultiplicationProgress({ unlockedTables: [2, 5, 10, 7] });
+
+  assertEqual(progress.selectedTables.join(","), "2,5,10,7");
+});
+
+test("progress: cannot deactivate the last selected table", () => {
+  const progress = normalizeMultiplicationProgress({ selectedTables: [2] });
+  const next = toggleSelectedTable(progress, 2);
+
+  assertEqual(next.selectedTables.join(","), "2");
+});
+
+test("progress: table selection bonus scales with active tables", () => {
+  assertEqual(calculateTableSelectionBonus({ selectedTables: [2] }), 0);
+  assertEqual(calculateTableSelectionBonus({ selectedTables: [2, 5, 10] }), 4);
+  assertEqual(calculateTableSelectionBonus({ selectedTables: [2, 3, 4, 5, 6, 7, 8, 9, 10] }), 16);
 });

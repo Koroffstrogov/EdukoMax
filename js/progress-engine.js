@@ -18,10 +18,16 @@ import {
   normalizeTablePoints,
   normalizeUnlockedModes
 } from "./reward-engine.js";
+import {
+  normalizeSpacedSchedule,
+  updateSpacedSchedule
+} from "./spaced-repetition-engine.js";
+import { normalizeSelectedTables } from "./table-selection.js";
 
 export function createInitialMultiplicationProgress() {
   return {
     unlockedTables: [...INITIAL_UNLOCKED_TABLES],
+    selectedTables: [...INITIAL_UNLOCKED_TABLES],
     mixedModeUnlocked: false,
     unlockedModes: [...INITIAL_UNLOCKED_MODES],
     tablePoints: normalizeTablePoints({}),
@@ -38,6 +44,10 @@ export function normalizeMultiplicationProgress(progress) {
 
   return {
     unlockedTables: normalizeUnlockedTables(progress.unlockedTables),
+    selectedTables: normalizeSelectedTables(
+      progress.selectedTables,
+      progress.unlockedTables || INITIAL_UNLOCKED_TABLES
+    ),
     mixedModeUnlocked: Boolean(progress.mixedModeUnlocked),
     unlockedModes: normalizeUnlockedModes(
       progress.unlockedModes,
@@ -123,6 +133,7 @@ export function normalizeFactProgress(factProgress) {
 
   return {
     ...stats,
+    ...normalizeSpacedSchedule(factProgress),
     mastery: clampScore(factProgress.mastery),
     needsPractice: Boolean(factProgress.needsPractice),
     modeStats: normalizeModeStats(factProgress.modeStats)
@@ -157,6 +168,10 @@ function updateFactProgress(factProgress, isCorrect, answerDetails, answeredAt, 
     recentMeta
   );
   const modeStats = { ...factProgress.modeStats };
+  const spacedSchedule = updateSpacedSchedule(
+    { ...factProgress, ...updatedStats },
+    { ...answerDetails, isCorrect, answeredAt }
+  );
 
   if (modeId !== null) {
     modeStats[modeId] = updatePracticeStats(
@@ -170,6 +185,7 @@ function updateFactProgress(factProgress, isCorrect, answerDetails, answeredAt, 
 
   return {
     ...updatedStats,
+    ...spacedSchedule,
     mastery: factProgress.mastery,
     needsPractice: factProgress.needsPractice,
     modeStats

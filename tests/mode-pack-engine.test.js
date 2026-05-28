@@ -1,6 +1,7 @@
 import { test } from "./test-runner.js";
 import { assert, assertEqual } from "./test-utils.js";
 import { createDefaultSave, normalizeSave } from "../js/save-data.js";
+import { getPackById } from "../js/premium-modes/mode-pack-data.js";
 import { getShopSummary } from "../js/reward-engine.js";
 import {
   buyModePack,
@@ -30,6 +31,20 @@ test("mode pack purchase is refused without enough coins", () => {
   assertEqual(canBuyModePack(save, "competitive-pack"), false);
 });
 
+test("magic bracelets pack is visible and costs 160 coins", () => {
+  const pack = getPackById("magic-bracelets");
+  const save = createDefaultSave();
+  save.rewards.coins = 160;
+  const result = buyModePack(save, "magic-bracelets");
+
+  assertEqual(pack.price, 160);
+  assertEqual(pack.family, "story");
+  assert(result.ok);
+  assertEqual(result.save.rewards.coins, 0);
+  assert(isModePackOwned(result.save, "magic-bracelets"));
+  assert(isModePackOwned(normalizeSave(result.save), "magic-bracelets"));
+});
+
 test("mode pack purchase is refused when already owned", () => {
   const save = createDefaultSave();
   save.rewards.coins = 500;
@@ -56,6 +71,7 @@ test("base multiplication modes remain free and owned", () => {
   const save = createDefaultSave();
   const shop = getShopSummary(save);
 
-  assertEqual(shop.modes.length, 5);
+  assertEqual(shop.modes.length, 6);
+  assert(shop.modes.some((mode) => mode.id === "multiple-choice-8"), "QCM 8 choices is free");
   assert(shop.modes.every((mode) => mode.isOwned && mode.cost === 0));
 });

@@ -2,7 +2,8 @@ export const CARD_RARITIES = Object.freeze({
   COMMON: "common",
   RARE: "rare",
   EPIC: "epic",
-  MASTERY: "mastery"
+  MASTERY: "mastery",
+  MAX: "max"
 });
 
 export const TABLE_UNIVERSES = Object.freeze({
@@ -113,7 +114,12 @@ export const COLLECTIBLE_CARDS = Object.freeze([
   card("mix-c1", "mix", "common", "Éclaireur Royal", "Serviteur fidèle", "Champion de tous les mondes.", "⚡"),
   card("mix-c2", "mix", "common", "Héraut", "Messager du roi", "Il annonce tes victoires.", "📯"),
   card("mix-r1", "mix", "rare", "Chevalier d'Élite", "Guerrier mixte", "Maître de toutes les tables.", "🗡️"),
-  card("mix-e1", "mix", "epic", "Roi des Champions", "Légende vivante", "Seul le meilleur le gagne.", "🏆")
+  card("mix-e1", "mix", "epic", "Roi des Champions", "Légende vivante", "Seul le meilleur le gagne.", "🏆"),
+
+  // Cartes MAX — toutes les tables actives et plus de 90 % de réussite
+  card("max-1", "mix", "max", "Étoile MAX", "Défi total", "Toutes les tables étaient dans l'aventure.", "🌟"),
+  card("max-2", "mix", "max", "Couronne MAX", "Championne des mondes", "Plus de 90 % avec toutes les tables actives !", "👑"),
+  card("max-3", "mix", "max", "Portail MAX", "Exploratrice complète", "Tu as ouvert tous les mondes à la fois.", "🌀")
 ]);
 
 export const BADGES = Object.freeze([

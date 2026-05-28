@@ -7,6 +7,7 @@ export const ROUTES = Object.freeze({
   modesChill: "modes/chill",
   modesScience: "modes/science",
   modesScienceFacts: "modes/science/facts",
+  modesBracelets: "modes/bracelets",
   leaderboard: "leaderboard",
   teacher: "teacher",
   collection: "collection",

@@ -1,7 +1,8 @@
 export const SPECIAL_MODE_PACKS = Object.freeze([
   pack("competitive-pack", "Défis Champions", "🏆", 180, "Des défis rapides pour battre les meilleurs scores.", "competitive"),
   pack("chill-pack", "Mode Détente", "🌸", 140, "Des jeux calmes, rigolos et sans pression.", "chill"),
-  pack("science-pack", "Coach Mémoire", "🧠", 220, "Des révisions intelligentes pour mieux retenir.", "science")
+  pack("science-pack", "Coach Mémoire", "🧠", 220, "Des révisions intelligentes pour mieux retenir.", "science"),
+  pack("magic-bracelets", "Bracelets Magiques", "💎", 160, "Fabrique des bracelets avec des perles, des rubans et des charms magiques.", "story")
 ]);
 
 export const PREMIUM_MODES = Object.freeze([
@@ -11,7 +12,8 @@ export const PREMIUM_MODES = Object.freeze([
   mode("mascot-snack", "Goûter de la Mascotte", "Offre des friandises avec tes réponses.", "chill-pack", "🍪", 8),
   mode("smart-review", "Révision Intelligente", "Revois les multiplications les plus utiles.", "science-pack", "📘", 10),
   mode("anti-forget", "Mission Anti-Oubli", "Réveille les multiplications anciennes.", "science-pack", "⭐", 10),
-  mode("clever-mix", "Mix Malin", "Mélange les tables proches pour bien choisir.", "science-pack", "🔬", 10)
+  mode("clever-mix", "Mix Malin", "Mélange les tables proches pour bien choisir.", "science-pack", "🔬", 10),
+  mode("magic-bracelets", "Bracelets Magiques", "Fabrique des bijoux en choisissant les bons lots de perles.", "magic-bracelets", "💎", 8)
 ]);
 
 export function getSpecialModePacks() {

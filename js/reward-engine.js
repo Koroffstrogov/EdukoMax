@@ -7,10 +7,12 @@ import {
 } from "./multiplication-data.js";
 import { QUESTION_MODES } from "./multiplication-generator.js";
 import { DEFAULT_OWNED_THEME_IDS, getThemeShopItems, normalizeThemeId } from "./theme-data.js";
+import { normalizeSelectedTables } from "./table-selection.js";
 
 export const SESSION_MODES = Object.freeze({
   directAnswer: QUESTION_MODES.directAnswer,
   multipleChoice: QUESTION_MODES.multipleChoice,
+  multipleChoice8: QUESTION_MODES.multipleChoice8,
   visualGroups: QUESTION_MODES.visualGroups,
   missingFactor: QUESTION_MODES.missingFactor,
   mixed: "mixed"
@@ -19,18 +21,10 @@ export const SESSION_MODES = Object.freeze({
 export const INITIAL_UNLOCKED_MODES = Object.freeze(Object.values(SESSION_MODES));
 export const INITIAL_OWNED_THEMES = DEFAULT_OWNED_THEME_IDS;
 
-export const TABLE_SHOP_ITEMS = Object.freeze([
-  tableItem(3, 40, "🌿", "Jardin des Trois"),
-  tableItem(4, 50, "🛠️", "Atelier Quatre"),
-  tableItem(6, 60, "🎡", "Roue de Six"),
-  tableItem(8, 70, "🚀", "Ville Huit"),
-  tableItem(9, 80, "⭐", "Étoiles Neuf"),
-  tableItem(7, 90, "🏰", "Château Mystérieux")
-]);
-
 const MODE_SHOP_ITEMS = Object.freeze([
   modeItem(SESSION_MODES.directAnswer, "Réponse directe", "Écris le résultat.", 0),
   modeItem(SESSION_MODES.multipleChoice, "QCM", "Choisis parmi 4 réponses.", 0),
+  modeItem(SESSION_MODES.multipleChoice8, "QCM 8 choix", "Plus de choix, bonus de pièces.", 0),
   modeItem(SESSION_MODES.visualGroups, "Groupes visuels", "Compte les petits groupes.", 0),
   modeItem(SESSION_MODES.missingFactor, "Facteur manquant", "Trouve le nombre caché.", 0),
   modeItem(SESSION_MODES.mixed, "Mix", "Toutes les formes en session.", 0)
@@ -88,6 +82,11 @@ export function getShopSummary(save) {
 
 export function purchaseShopItem(save, itemType, itemId) {
   const nextSave = normalizeShopSave(save);
+
+  if (itemType === "table") {
+    return { ok: false, error: "table-selection-only", save: nextSave };
+  }
+
   const item = findShopItem(itemType, itemId);
 
   if (!item) {
@@ -122,23 +121,19 @@ export function isModeOwned(progress, modeId) {
 }
 
 export function getTablePrice(table) {
-  const item = TABLE_SHOP_ITEMS.find((shopItem) => shopItem.table === Number(table));
-  return item?.price ?? 0;
+  return isValidTable(Number(table)) ? 0 : 0;
 }
 
 export function isTableOwned(save, table) {
-  return normalizeTableList(save?.progress?.multiplication?.unlockedTables)
-    .includes(Number(table));
+  return isValidTable(Number(table));
 }
 
 export function canBuyTable(save, table) {
-  const price = getTablePrice(table);
-  return price > 0 && !isTableOwned(save, table) &&
-    normalizeCount(save?.rewards?.coins) >= price;
+  return false;
 }
 
 export function buyTable(save, table) {
-  return purchaseShopItem(save, "table", String(table));
+  return { ok: false, error: "table-selection-only", save: normalizeShopSave(save) };
 }
 
 export function isThemeOwned(save, themeId) {
@@ -169,14 +164,24 @@ export function normalizeTablePoints(tablePoints) {
 }
 
 function getTableShopState(save, item) {
-  const state = getShopItemState(save, "table", item);
   const progression = getTableProgression(save, item.table);
+  const selectedTables = normalizeSelectedTables(
+    save.progress.multiplication.selectedTables,
+    save.progress.multiplication.unlockedTables
+  );
 
   return {
-    ...state,
+    ...item,
+    type: "table",
     table: item.table,
-    price: item.price,
-    cost: item.price,
+    price: 0,
+    cost: 0,
+    isOwned: true,
+    isLocked: false,
+    canBuy: false,
+    needsCoins: false,
+    requirementsMet: true,
+    isSelected: selectedTables.includes(item.table),
     progression,
     progressLabel: progression.label,
     masteryPercent: progression.masteryPercent,
@@ -200,10 +205,6 @@ function getShopItemState(save, itemType, item) {
 }
 
 function isItemOwned(save, itemType, item) {
-  if (itemType === "table") {
-    return save.progress.multiplication.unlockedTables.includes(item.table);
-  }
-
   if (itemType === "mode") {
     return isModeOwned(save.progress.multiplication, item.id);
   }
@@ -212,14 +213,6 @@ function isItemOwned(save, itemType, item) {
 }
 
 function applyOwnership(save, itemType, item) {
-  if (itemType === "table") {
-    save.progress.multiplication.unlockedTables = normalizeTableList([
-      ...save.progress.multiplication.unlockedTables,
-      item.table
-    ]);
-    return;
-  }
-
   save.rewards.ownedThemes = normalizeOwnedThemes([
     ...save.rewards.ownedThemes,
     item.id
@@ -233,7 +226,6 @@ function applyOwnership(save, itemType, item) {
 
 function findShopItem(itemType, itemId) {
   const list = {
-    table: getTableCatalog(),
     mode: MODE_SHOP_ITEMS,
     theme: getThemeShopItems()
   }[itemType] || [];
@@ -251,6 +243,10 @@ function getTotalCorrectAnswers(save) {
 function normalizeShopSave(save) {
   const nextSave = cloneData(save);
   nextSave.progress.multiplication.unlockedTables = normalizeTableList(
+    nextSave.progress.multiplication.unlockedTables
+  );
+  nextSave.progress.multiplication.selectedTables = normalizeSelectedTables(
+    nextSave.progress.multiplication.selectedTables,
     nextSave.progress.multiplication.unlockedTables
   );
   nextSave.progress.multiplication.unlockedModes = normalizeUnlockedModes(
@@ -284,12 +280,10 @@ function getTableFromFactId(factId) {
 
 function getTableCatalog() {
   return TABLES.map((table) => {
-    const shopItem = TABLE_SHOP_ITEMS.find((item) => item.table === table);
     const metadata = getTableMetadata(table);
 
-    return shopItem || tableItem(
+    return tableItem(
       table,
-      0,
       getFreeTableIcon(table),
       metadata?.worldName || `Monde de ${table}`
     );
@@ -353,7 +347,7 @@ function normalizeTableList(tables) {
   return TABLE_UNLOCK_ORDER.filter((table) => cleanTables.includes(table));
 }
 
-function tableItem(table, price, icon, worldName) {
+function tableItem(table, icon, worldName) {
   const metadata = getTableMetadata(table);
 
   return Object.freeze({
@@ -363,8 +357,8 @@ function tableItem(table, price, icon, worldName) {
     worldName,
     description: metadata?.description || `Ouvre l'aventure de la table de ${table}.`,
     icon,
-    price,
-    cost: price
+    price: 0,
+    cost: 0
   });
 }
 
@@ -373,7 +367,17 @@ function modeItem(id, label, description, cost, requirementType = null, requirem
 }
 
 function getFreeTableIcon(table) {
-  return { 2: "🌲", 5: "🚀", 10: "🪐" }[table] || "✨";
+  return {
+    2: "🌲",
+    3: "🌿",
+    4: "🛠️",
+    5: "🚀",
+    6: "🎡",
+    7: "🏰",
+    8: "💫",
+    9: "⭐",
+    10: "🪐"
+  }[table] || "✨";
 }
 
 function normalizeCount(value) {

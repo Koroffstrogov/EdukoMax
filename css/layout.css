@@ -1,5 +1,5 @@
 .app-shell {
-  width: min(1120px, 100%);
+  width: min(1440px, 100%);
   min-height: 100vh;
   margin: 0 auto;
   padding: var(--space-5);
@@ -43,6 +43,18 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-4);
+}
+
+.mode-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.table-tile-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--space-3);
 }
 
 .shop-grid--tables {
@@ -104,5 +116,23 @@
   .shop-grid,
   .shop-grid--tables {
     grid-template-columns: 1fr;
+  }
+
+  .mode-mini-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .table-tile-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .mode-mini-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .table-tile-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

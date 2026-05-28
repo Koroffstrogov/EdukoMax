@@ -1,6 +1,7 @@
 /* Collection screen */
 .collection-screen {
-  max-width: 900px;
+  width: 100%;
+  max-width: 1360px;
   margin: 0 auto;
   padding: var(--space-5);
 }
@@ -49,6 +50,34 @@
   margin-bottom: var(--space-5);
 }
 
+.collection-help {
+  margin-bottom: var(--space-5);
+  padding: var(--space-4);
+  border: 2px solid color-mix(in srgb, var(--color-secondary) 34%, white);
+  border-radius: var(--radius-md);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.78)),
+    linear-gradient(135deg, var(--color-warning), var(--color-secondary));
+  box-shadow: var(--shadow-soft);
+}
+
+.collection-help h2 {
+  margin-bottom: var(--space-2);
+}
+
+.collection-help p,
+.collection-help li {
+  color: var(--color-muted);
+  font-weight: 800;
+}
+
+.collection-help ul {
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-3) 0 0;
+  padding-left: var(--space-5);
+}
+
 .collection-filter {
   display: flex;
   flex-direction: column;
@@ -84,12 +113,12 @@
 /* Card grid */
 .collection-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: var(--space-3);
 }
 
 .collection-grid--badges {
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
 }
 
 .collection-empty {
@@ -184,6 +213,18 @@
 
 .collectible-card--mastery .collectible-card__rarity {
   background: #eab308;
+  color: #fff;
+}
+
+.collectible-card--max {
+  border-color: #ec4899;
+  background:
+    radial-gradient(circle at top right, rgba(250, 204, 21, 0.38), transparent 36%),
+    linear-gradient(180deg, var(--color-surface) 48%, #fdf2f8);
+}
+
+.collectible-card--max .collectible-card__rarity {
+  background: linear-gradient(135deg, #ec4899, #8b5cf6);
   color: #fff;
 }
 
@@ -282,6 +323,41 @@
   text-align: center;
 }
 
+.reward-reveal__cover {
+  display: grid;
+  gap: var(--space-2);
+  place-items: center;
+  min-height: 148px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.reward-reveal__cover::-webkit-details-marker {
+  display: none;
+}
+
+.reward-reveal__gift {
+  display: grid;
+  width: 72px;
+  height: 72px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-warning);
+  box-shadow: var(--shadow-button);
+  font-size: var(--font-xxl);
+  animation: card-appear 0.5s ease-out;
+}
+
+.reward-reveal__hint {
+  color: var(--color-muted);
+  font-weight: 800;
+}
+
+.reward-reveal[open] .reward-reveal__cover {
+  min-height: auto;
+  padding-bottom: var(--space-3);
+}
+
 .reward-reveal__title {
   font-size: var(--font-lg);
   margin-bottom: var(--space-3);
@@ -309,6 +385,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .reward-reveal__gift,
   .reward-reveal__item {
     animation: none;
   }
@@ -324,6 +401,13 @@
 
 .reward-reveal__item--mastery {
   border-color: #eab308;
+}
+
+.reward-reveal__item--max {
+  border-color: #ec4899;
+  background:
+    radial-gradient(circle at top right, rgba(250, 204, 21, 0.32), transparent 40%),
+    var(--color-surface);
 }
 
 .reward-reveal__item--badge {
@@ -398,6 +482,13 @@
 
 .showcase__card--mastery {
   border-color: #eab308;
+}
+
+.showcase__card--max {
+  border-color: #ec4899;
+  background:
+    radial-gradient(circle at top right, rgba(250, 204, 21, 0.3), transparent 40%),
+    var(--color-surface);
 }
 
 /* Motivation message */

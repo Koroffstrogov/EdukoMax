@@ -1,16 +1,23 @@
-import { SESSION_MODES, getShopSummary } from "../reward-engine.js";
+import { getShopSummary } from "../reward-engine.js";
+import {
+  calculateTableSelectionBonus,
+  getSelectedTables
+} from "../table-selection.js";
 
 export function renderMultiplicationView(state) {
   const shop = getShopSummary(state.save);
+  const progress = state.save.progress.multiplication;
+  const activeTableCount = getSelectedTables(progress).length;
+  const tableBonus = calculateTableSelectionBonus(progress);
 
   return `
     <section class="shop-hero" aria-labelledby="multiplication-title">
       <div>
         <p class="eyebrow">Aventures de multiplication</p>
-        <h1 id="multiplication-title">Choisis ton monde</h1>
+        <h1 id="multiplication-title">Choisis tes tables</h1>
         <p>
-          Tous les modes sont ouverts. Gagne des pièces dans les mondes déjà
-          disponibles, puis achète la table que tu veux.
+          Tape une tuile pour la mettre ON ou OFF. Plus tu joues avec des
+          tables, plus le bonus grandit.
         </p>
         <div class="action-row">
           <button class="button button-secondary" type="button" data-route="modes">
@@ -18,7 +25,7 @@ export function renderMultiplicationView(state) {
           </button>
         </div>
       </div>
-      ${renderCoinPill(shop.coins)}
+      ${renderCoinBonusPanel(shop.coins, activeTableCount, tableBonus)}
     </section>
     ${state.shopMessage ? `<div class="shop-message" role="status">${state.shopMessage}</div>` : ""}
 
@@ -27,7 +34,7 @@ export function renderMultiplicationView(state) {
         <p class="eyebrow">Modes gratuits</p>
         <h2 id="modes-title">Missions à choisir</h2>
       </div>
-      <div class="shop-grid">
+      <div class="mode-mini-grid">
         ${shop.modes.map(renderModeCard).join("")}
       </div>
     </section>
@@ -35,114 +42,85 @@ export function renderMultiplicationView(state) {
     <section aria-labelledby="tables-title">
       <div class="section-heading">
         <p class="eyebrow">Mondes</p>
-        <h2 id="tables-title">Tables à collectionner</h2>
+        <h2 id="tables-title">Tables à activer</h2>
       </div>
-      <div class="shop-grid shop-grid--tables">
-        ${shop.tables.map((table) => renderTableCard(table, shop.coins)).join("")}
+      <div class="table-tile-grid" aria-label="Tables activées ou en pause">
+        ${shop.tables.map(renderTableCard).join("")}
       </div>
     </section>
   `;
 }
 
-function renderCoinPill(coins) {
+function renderCoinBonusPanel(coins, activeTableCount, tableBonus) {
   return `
-    <div class="coin-pill coin-pill--large" aria-label="Pièces disponibles">
-      <span aria-hidden="true">🪙</span>
-      <strong>${coins}</strong>
-      <span>pièces</span>
+    <div class="coin-bonus-panel" aria-label="Pièces et bonus des tables actives">
+      <div class="coin-pill coin-pill--large">
+        <span aria-hidden="true">🪙</span>
+        <strong>${coins}</strong>
+        <span>pièces</span>
+      </div>
+      <div class="table-bonus-card">
+        <span class="table-bonus-card__label">${activeTableCount} tables actives</span>
+        <strong>+${tableBonus} 🪙</strong>
+        <span>bonus à la fin d'une session</span>
+      </div>
     </div>
   `;
 }
 
 function renderModeCard(mode) {
+  const meta = getModeMeta(mode.id);
+
   return `
-    <article class="shop-card mode-card is-owned">
-      <span class="subject-symbol" aria-hidden="true">${getModeIcon(mode.id)}</span>
-      <div>
-        <h3>${mode.label}</h3>
-        <p>${mode.description}</p>
+    <article class="mode-mini-card" data-mode-id="${mode.id}">
+      <span class="mode-mini-card__icon" aria-hidden="true">${meta.icon}</span>
+      <div class="mode-mini-card__copy">
+        <h3>${meta.label}</h3>
+        <p>${meta.hint}</p>
       </div>
-      <span class="tag">Gratuit</span>
-      <button class="button button-primary" type="button" data-start-session="${mode.id}">
+      <button class="button button-primary button-sm" type="button" data-start-session="${mode.id}">
         Jouer
       </button>
     </article>
   `;
 }
 
-function renderTableCard(table, coins) {
-  const ownedClass = table.isOwned ? " is-owned" : " is-locked";
+function renderTableCard(table) {
+  const activeClass = table.isSelected ? " is-selected" : " is-muted";
+  const stateText = table.isSelected ? "Dans les jeux" : "En pause";
+  const recommendationIcon = getRecommendationIcon(table.recommendation);
 
-  return `
-    <article class="shop-card table-card${ownedClass}">
-      <span class="table-token" aria-hidden="true">${table.icon}</span>
-      <div>
-        <h3>${table.label}</h3>
-        <p>Table de ${table.table}</p>
-      </div>
-      ${table.isOwned ? renderOwnedTable(table) : renderLockedTable(table, coins)}
-    </article>
-  `;
-}
-
-function renderOwnedTable(table) {
-  return `
-    <span class="tag">${table.recommendation}</span>
-    <p class="progress-line">Progression: ${table.masteryPercent}%</p>
-    <p class="progress-line">${table.progressLabel}</p>
-    <button
-      class="button button-primary"
-      type="button"
-      data-start-session="${SESSION_MODES.directAnswer}"
-      data-start-table="${table.table}"
-    >
-      Jouer
-    </button>
-  `;
-}
-
-function renderLockedTable(table, coins) {
-  const missingCoins = Math.max(0, table.price - coins);
-
-  return `
-    <span class="tag">🔒 À débloquer</span>
-    <p class="progress-line">Prix : ${table.price} 🪙</p>
-    <p class="progress-line">
-      ${missingCoins > 0
-        ? `Il te manque ${missingCoins} 🪙`
-        : `Débloque ce monde !`}
-    </p>
-    ${missingCoins === 0 ? renderBuyButton(table) : renderEarnButton()}
-  `;
-}
-
-function renderBuyButton(table) {
   return `
     <button
-      class="button button-primary"
+      class="table-number-tile${activeClass}"
       type="button"
-      data-buy-type="table"
-      data-buy-id="${table.table}"
+      data-toggle-table="${table.table}"
+      aria-pressed="${table.isSelected ? "true" : "false"}"
+      aria-label="Table de ${table.table} ${table.isSelected ? "activée" : "désactivée"}"
     >
-      Acheter
+      <span class="table-state-badge">${table.isSelected ? "ON" : "OFF"}</span>
+      <span class="table-world-emoji" aria-hidden="true">${table.icon}</span>
+      <span class="table-number">${table.table}</span>
+      <span class="table-state-text">${stateText}</span>
+      <span class="table-mini-progress">${table.masteryPercent}% · ${recommendationIcon}</span>
     </button>
   `;
 }
 
-function renderEarnButton() {
-  return `
-    <button class="button button-secondary" type="button" data-start-session="${SESSION_MODES.directAnswer}">
-      Gagner des pièces
-    </button>
-  `;
-}
-
-function getModeIcon(modeId) {
+function getModeMeta(modeId) {
   return {
-    "direct-answer": "×",
-    "multiple-choice": "4",
-    "visual-groups": "●",
-    "missing-factor": "?",
-    mixed: "★"
-  }[modeId] || "×";
+    "direct-answer": { icon: "×", label: "Réponse", hint: "Tu écris" },
+    "multiple-choice": { icon: "4", label: "QCM 4", hint: "4 choix" },
+    "multiple-choice-8": { icon: "8", label: "QCM 8", hint: "Bonus pièces" },
+    "visual-groups": { icon: "●", label: "Groupes", hint: "Avec dessins" },
+    "missing-factor": { icon: "?", label: "Mystère", hint: "Nombre caché" },
+    mixed: { icon: "★", label: "Mix", hint: "Tout mélangé" }
+  }[modeId] || { icon: "×", label: "Réponse", hint: "Tu écris" };
+}
+
+function getRecommendationIcon(recommendation) {
+  const label = String(recommendation || "");
+  if (label.includes("🏆")) return "🏆";
+  if (label.includes("🎯")) return "🎯";
+  return "⭐";
 }

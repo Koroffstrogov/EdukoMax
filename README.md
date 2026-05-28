@@ -41,7 +41,7 @@ L'application contient :
 - un écran d'accueil ;
 - un écran de réglages ;
 - une gestion de profils sans mot de passe ;
-- un écran Multiplications avec mondes de tables achetables ;
+- un écran Multiplications avec tables activables gratuitement ;
 - un écran Modes spéciaux avec packs premium achetables en pièces ;
 - un écran de session Multiplications de 8 questions ;
 - tous les modes d'exercices de multiplication disponibles dès le début ;
@@ -66,7 +66,7 @@ Chaque profil stocke ses propres données :
 - icône ;
 - thème favori ;
 - progression des multiplications ;
-- tables achetées ;
+- tables actives ;
 - pièces ;
 - thèmes possédés ;
 - packs premium possédés ;
@@ -90,23 +90,23 @@ cours est arrêtée pour éviter d'écrire une réponse dans le mauvais profil.
 ## Progression multiplication
 
 Les tables disponibles vont de 2 à 10. Toutes les tables sont visibles dès le
-début comme des mondes à collectionner.
+début comme des mondes à activer ou mettre en pause.
 
-Tables débloquées au départ :
+Tables actives au départ :
 
 - 2
 - 5
 - 10
 
-Tables verrouillées au départ mais achetables immédiatement avec des pièces :
+Toutes les autres tables sont gratuites aussi, mais désactivées au départ :
 
 ```txt
 3, 4, 6, 8, 9, 7
 ```
 
-Il n'y a pas de prérequis de maîtrise, de niveau ou de table précédente pour
-acheter une table verrouillée. L'enfant économise ses pièces et choisit le monde
-qu'il veut ouvrir.
+L'enfant active ou désactive les cartes de tables. Une table active peut sortir
+dans n'importe quel mode de multiplication ; une table désactivée reste visible,
+mais ne sort pas dans les questions. Il faut garder au moins une table active.
 
 Chaque multiplication est suivie individuellement avec un identifiant comme
 `6x7`. Chaque profil possède sa propre mémoire complète des 81 multiplications
@@ -123,6 +123,10 @@ de `2x2` à `10x10`. La progression garde notamment :
 - le score de maîtrise ;
 - l'indicateur `needsPractice` quand la multiplication demande encore un
   entraînement ;
+- la prochaine date de révision conseillée ;
+- l'intervalle de révision ;
+- la force de rappel estimée ;
+- la dernière difficulté observée ;
 - les points de table gagnés avec les bonnes réponses.
 
 La progression sert à afficher un état pédagogique :
@@ -140,9 +144,11 @@ Le moteur classe aussi les facts en mémoire interne :
 - `hesitating` : réussie mais lente, récente ou fragile ;
 - `struggling` : erreurs fréquentes ou récentes.
 
-Le générateur choisit ensuite les questions uniquement dans les tables
-débloquées du profil actif. Il privilégie les facts peu vues, anciennes, lentes,
-marquées `needsPractice` ou avec des erreurs récentes.
+Le moteur prépare ensuite une file de session uniquement dans les tables actives
+du profil actif. Cette file mélange facts à revoir, consolidation, réussites
+faciles et découvertes pour garder un rythme doux. Les multiplications peu vues,
+anciennes, lentes, marquées `needsPractice`, dues en révision espacée ou avec
+des erreurs récentes remontent en priorité.
 
 ## Boutique et pièces
 
@@ -151,18 +157,20 @@ Chaque bonne réponse donne :
 - `+1 pièce` ;
 - `+1 point` sur la table travaillée.
 
-Les pièces se dépensent pour acheter des tables et des thèmes. Les points de
-table restent comme trace de progression, mais ne bloquent aucun achat.
-Les pièces peuvent aussi débloquer des packs de modes premium, sans argent réel.
+Les tables ne s'achètent plus : elles servent de filtres gratuits pour choisir
+les questions possibles. Les pièces se dépensent pour acheter des thèmes et des
+packs de modes premium, sans argent réel. Les points de table restent comme
+trace de progression.
 
-Prix des tables :
+L'écran Multiplications affiche le bonus avant de jouer. À la fin d'une
+session, ce bonus de tables actives est ajouté :
 
-- table 3 : 40 pièces ;
-- table 4 : 50 pièces ;
-- table 6 : 60 pièces ;
-- table 8 : 70 pièces ;
-- table 9 : 80 pièces ;
-- table 7 : 90 pièces.
+```txt
+(nombre de tables actives - 1) x 2 pièces
+```
+
+Exemples : 1 table active = +0 pièce, 3 tables actives = +4 pièces,
+9 tables actives = +16 pièces.
 
 Tous les modes de multiplication sont gratuits et disponibles dès le début. Les
 thèmes restent des achats cosmétiques. Les packs premium sont des variantes
@@ -214,12 +222,32 @@ début :
 
 - `direct-answer` : réponse directe ;
 - `multiple-choice` : choix parmi 4 réponses ;
+- `multiple-choice-8` : QCM 8 choix, plus difficile et plus rémunérateur ;
 - `visual-groups` : groupes visuels simples ;
 - `missing-factor` : facteur manquant ;
 - `mixed` : mélange des modes.
 
-La sélection des questions privilégie les multiplications peu vues, ratées ou
-anciennes, afin d'éviter un hasard pur.
+La sélection prépare une file équilibrée de session, afin d'éviter un hasard pur
+et d'éviter de répéter immédiatement une erreur. Le moteur applique aussi deux
+gardes anti-répétition :
+
+- la même multiplication ne doit pas être proposée 3 fois d'affilée si une
+  alternative existe dans la session ;
+- un QCM qui repropose la même multiplication juste après change ses
+  propositions de réponses.
+
+Les modes orientent aussi les facts choisies :
+
+- `direct-answer` : rappel actif, facts dues ou à consolider ;
+- `multiple-choice` : découverte et consolidation ;
+- `multiple-choice-8` : consolidation avec 8 choix et bonus de pièces ;
+- `visual-groups` : nouvelles facts et facts fragiles avec support visuel ;
+- `missing-factor` : facts déjà un peu connues quand c'est possible ;
+- `mixed` : rotation des formats avec une file équilibrée.
+
+Le mode `multiple-choice-8` ajoute un bonus de fin de session égal à 50 % des
+bonnes réponses du mode, arrondi à l'entier inférieur. Exemple : 8 bonnes
+réponses donnent `+4 pièces` en plus des pièces déjà gagnées.
 
 ## Modes premium
 
@@ -231,7 +259,8 @@ profil actif :
 
 - 🏆 `competitive-pack` — Défis Champions : 180 pièces ;
 - 🌸 `chill-pack` — Mode Détente : 140 pièces ;
-- 🧠 `science-pack` — Coach Mémoire : 220 pièces.
+- 🧠 `science-pack` — Coach Mémoire : 220 pièces ;
+- 💎 `magic-bracelets` — Bracelets Magiques : 160 pièces.
 
 Routes disponibles :
 
@@ -240,6 +269,7 @@ Routes disponibles :
 - `#modes/chill` : Mode Détente ;
 - `#modes/science` : Coach Mémoire ;
 - `#modes/science/facts` : ouvre le bilan professeur avec le panneau Coach Mémoire ;
+- `#modes/bracelets` : atelier Bracelets Magiques ;
 - `#leaderboard` : classement local compétitif.
 
 ### Défis Champions
@@ -264,6 +294,24 @@ Modes inclus :
 
 Pas de chrono agressif ni de classement.
 
+### Bracelets Magiques
+
+Mode premium autonome : `magic-bracelets`.
+
+Le mode se joue sans clavier : l'enfant clique ou touche de gros lots de perles
+ou coffres. Une session contient 8 commandes et utilise la même file de
+pratique que les autres modes, donc uniquement les tables actives du profil.
+
+Variantes incluses :
+
+- `groups` : choisir le bon lot de perles à ajouter sur chaque bracelet ;
+- `total-mystery` : choisir le coffre contenant le total de perles ;
+- `missing-lot` : retrouver combien de perles vont sur chaque bracelet.
+
+Chaque commande met à jour la mémoire de la multiplication travaillée. Une
+bonne réponse remplit les bracelets avec un effet scintillant, une réponse à
+reprendre affiche une astuce douce et le bouton `Continuer`.
+
 ### Coach Mémoire
 
 Modes inclus :
@@ -272,7 +320,8 @@ Modes inclus :
 - `anti-forget` : Mission Anti-Oubli, priorité aux facts anciennes ;
 - `clever-mix` : Mix Malin, mélange de facts proches ou confusables.
 
-Le coach utilise uniquement les tables débloquées du profil actif.
+Le coach utilise uniquement les tables actives du profil actif.
+Il tient compte des facts fragiles, anciennes et dues en révision espacée.
 Depuis l'écran Coach Mémoire, le bouton `Voir les multiplications` ouvre le
 Bilan professeur. Le panneau Coach Mémoire y affiche les facts actuellement
 ciblées par chaque mode : facts fragiles, anciennes ou proches à ne pas
@@ -308,8 +357,8 @@ réponses alimentent aussi `modeStats` par mode de jeu, par exemple `mixed`,
 
 ## Session Multiplications
 
-Depuis l'accueil, ouvrir `Multiplications`, puis choisir un mode ou un monde de
-table avec le bouton `Jouer`.
+Depuis l'accueil, ouvrir `Multiplications`, activer les tables souhaitées, puis
+choisir un mode avec le bouton `Jouer`.
 
 Une session contient 8 questions courtes. Après chaque réponse :
 
@@ -317,11 +366,18 @@ Une session contient 8 questions courtes. Après chaque réponse :
 - une bonne réponse affiche une petite animation de victoire, ajoute 1 pièce,
   pulse le compteur, puis passe automatiquement à la question suivante ;
 - une mauvaise réponse affiche un feedback aidant avec une explication simple ;
+- la multiplication ratée peut revenir plus tard dans la session, jamais
+  immédiatement ;
+- la même multiplication n'est pas servie 3 fois de suite quand le moteur a une
+  autre multiplication disponible ;
+- les QCM répétés sur une même multiplication changent leurs propositions ;
 - le bouton `Continuer` est utilisé uniquement après une erreur.
 
 À la fin de la session, l'application affiche un résumé avec le nombre de
-réussites et le pourcentage de réussite. Le compteur `Sessions terminées` est
-ensuite sauvegardé localement.
+réussites, le pourcentage de réussite, le bonus lié aux tables actives et les
+bonus éventuels du mode. Les cartes et badges gagnés restent cachés derrière un
+cadeau : l'enfant doit cliquer pour les dévoiler. Le compteur `Sessions
+terminées` est ensuite sauvegardé localement.
 
 ## Sauvegarde locale
 
@@ -355,6 +411,17 @@ modeStats: {
     errors: 0,
     recentResults: []
   }
+}
+```
+
+Chaque fact peut aussi contenir sa planification espacée :
+
+```js
+{
+  nextReviewAt: null,
+  reviewIntervalDays: 0,
+  retrievalStrength: 0,
+  lastDifficulty: "new"
 }
 ```
 
@@ -419,8 +486,15 @@ js/
     competitive-engine.js
     chill-engine.js
     science-review-engine.js
+  story-modes/
+    magic-bracelets-data.js
+    magic-bracelets-engine.js
+    magic-bracelets-renderer.js
   multiplication-data.js
   multiplication-generator.js
+  practice-planner.js
+  spaced-repetition-engine.js
+  table-selection.js
   training-insights-engine.js
   mastery-engine.js
   progress-engine.js
@@ -432,6 +506,10 @@ tests/
   test-utils.js
   storage.test.js
   multiplication-generator.test.js
+  spaced-repetition-engine.test.js
+  practice-planner.test.js
+  multiplication-session.test.js
+  session-completion.test.js
   progress-engine.test.js
   mastery-engine.test.js
   reward-engine.test.js
@@ -440,6 +518,8 @@ tests/
   competitive-engine.test.js
   science-review-engine.test.js
   premium-session.test.js
+  magic-bracelets-engine.test.js
+  magic-bracelets-renderer.test.js
   collectible-engine.test.js
   badge-engine.test.js
 ```
@@ -455,7 +535,7 @@ tests/
 - `training-insights-engine.js` : rapport professeur, statuts mémoire et tri des difficultés.
 - `theme-data.js` : catalogue des thèmes, prix, couleurs d'aperçu et migrations.
 - `theme-manager.js` : application des thèmes.
-- `reward-engine.js` : gains, achats de tables/thèmes, prix et possessions.
+- `reward-engine.js` : gains, achats de thèmes, états des tables et possessions.
 - `collectibles/collectible-data.js` : définitions statiques de cartes et badges.
 - `collectibles/collectible-engine.js` : logique de gain de cartes après session.
 - `collectibles/badge-engine.js` : évaluation et attribution des badges.
@@ -467,8 +547,12 @@ tests/
 - `premium-modes/competitive-engine.js` : scores et top 10 local.
 - `premium-modes/chill-engine.js` : textes et compteurs des modes détente.
 - `premium-modes/science-review-engine.js` : sélection intelligente des facts.
+- `story-modes/magic-bracelets-*.js` : données, logique et rendu du mode Bracelets Magiques.
 - `multiplication-data.js` : tables, facts et métadonnées pédagogiques.
 - `multiplication-generator.js` : génération des questions.
+- `practice-planner.js` : composition équilibrée des files de session.
+- `spaced-repetition-engine.js` : planification espacée des facts.
+- `table-selection.js` : tables actives et bonus de sélection.
 - `mastery-engine.js` : calculs de maîtrise et priorités.
 - `progress-engine.js` : enregistrement des réponses.
 - `multiplication-feedback.js` : messages positifs ou aidants après réponse.
@@ -484,10 +568,13 @@ tests/
 
 ### Cartes
 
-76 cartes réparties en 10 univers thématiques (un par table + mode mix).
+79 cartes réparties en 10 univers thématiques (un par table + mode mix).
 Chaque table possède 4 communes, 2 rares, 1 épique et 1 carte maîtrise.
+Le mode mix contient aussi 3 cartes MAX.
+Les cartes MAX apparaissent masquées dès le départ en haut de la collection pour
+montrer qu'il existe un défi spécial à débloquer.
 
-Raretés : `common`, `rare`, `epic`, `mastery`.
+Raretés : `common`, `rare`, `epic`, `mastery`, `max`.
 
 ### Attribution des cartes après session
 
@@ -495,8 +582,14 @@ Raretés : `common`, `rare`, `epic`, `mastery`.
 - Si accuracy ≥ 75 %, chance de carte rare ;
 - Si accuracy ≥ 90 % ou session parfaite, chance d'épique ;
 - Carte maîtrise attribuée automatiquement quand une table est maîtrisée ;
+- Carte MAX possible seulement si les 9 tables sont activées et si la réussite
+  de la session est strictement supérieure à 90 % ;
 - Maximum 3 cartes par session ;
 - Si aucune nouvelle carte disponible, bonus de 2 pièces.
+
+L'écran Collection explique ces règles avec un encart lisible pour l'enfant.
+En fin de session, les récompenses sont dévoilées via une animation légère après
+un clic sur le cadeau.
 
 ### Badges
 
@@ -506,7 +599,8 @@ cartes rares/épiques, sessions cumulées, tables maîtrisées.
 ### Écran Collection
 
 Route `#collection`. Affiche cartes et badges avec filtres par table et
-rareté, barre de progression, et messages motivants.
+rareté, barre de progression, et messages motivants. La grille utilise une
+largeur plus importante sur desktop pour afficher davantage de cartes.
 
 ## Règles de développement
 

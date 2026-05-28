@@ -1,18 +1,19 @@
 import {
   FACTORS,
   INITIAL_UNLOCKED_TABLES,
-  TABLES,
   getFactById,
   getFactId,
   getFactsForTable,
   isValidTable
 } from "./multiplication-data.js";
 import { calculateFactPriority } from "./mastery-engine.js";
+import { getSelectedTables } from "./table-selection.js";
 
 export const QUESTION_MODES = Object.freeze({
   directAnswer: "direct-answer",
   missingFactor: "missing-factor",
   multipleChoice: "multiple-choice",
+  multipleChoice8: "multiple-choice-8",
   visualGroups: "visual-groups"
 });
 
@@ -26,7 +27,7 @@ export function generateMultiplicationQuestion(progress, options = {}) {
     throw new Error("Unable to generate a multiplication question.");
   }
 
-  return buildQuestion(mode, fact);
+  return buildQuestion(mode, fact, normalizeVariant(options.choiceVariant));
 }
 
 export function choosePriorityMultiplication(progress, options = {}) {
@@ -49,7 +50,7 @@ export function choosePriorityMultiplication(progress, options = {}) {
     })[0].fact;
 }
 
-export function generateWrongAnswers(table, factor, count = 3) {
+export function generateWrongAnswers(table, factor, count = 3, variant = 0) {
   const correctAnswer = table * factor;
   const rawAnswers = [
     table * Math.max(2, factor - 1),
@@ -68,23 +69,25 @@ export function generateWrongAnswers(table, factor, count = 3) {
     .filter((answer) => Number.isInteger(answer) && answer > 0)
     .filter((answer) => answer !== correctAnswer);
 
-  return uniqueNumbers(cleanAnswers)
+  const candidates = uniqueNumbers(cleanAnswers)
     .sort((first, second) => {
       const distance = Math.abs(first - correctAnswer) - Math.abs(second - correctAnswer);
       return distance === 0 ? first - second : distance;
     })
     .concat(createFallbackAnswers(correctAnswer))
-    .filter((answer, index, list) => list.indexOf(answer) === index)
+    .filter((answer, index, list) => list.indexOf(answer) === index);
+
+  return rotateAnswers(candidates, variant)
     .slice(0, count);
 }
 
-function buildQuestion(mode, fact) {
+function buildQuestion(mode, fact, choiceVariant) {
   if (mode === QUESTION_MODES.missingFactor) {
     return buildMissingFactorQuestion(fact);
   }
 
-  if (mode === QUESTION_MODES.multipleChoice) {
-    return buildMultipleChoiceQuestion(fact);
+  if (mode === QUESTION_MODES.multipleChoice || mode === QUESTION_MODES.multipleChoice8) {
+    return buildMultipleChoiceQuestion(fact, mode, choiceVariant);
   }
 
   if (mode === QUESTION_MODES.visualGroups) {
@@ -111,14 +114,20 @@ function buildMissingFactorQuestion(fact) {
   });
 }
 
-function buildMultipleChoiceQuestion(fact) {
-  const wrongAnswers = generateWrongAnswers(fact.table, fact.factor, 3);
+function buildMultipleChoiceQuestion(fact, mode, choiceVariant) {
+  const choiceCount = mode === QUESTION_MODES.multipleChoice8 ? 8 : 4;
+  const wrongAnswers = generateWrongAnswers(
+    fact.table,
+    fact.factor,
+    choiceCount - 1,
+    choiceVariant
+  );
   const choiceValues = deterministicShuffle(
     [fact.product, ...wrongAnswers],
-    `${fact.id}-${QUESTION_MODES.multipleChoice}`
+    `${fact.id}-${mode}-${choiceVariant}`
   );
 
-  return createBaseQuestion(fact, QUESTION_MODES.multipleChoice, {
+  return createBaseQuestion(fact, mode, {
     prompt: `${fact.table} x ${fact.factor} = ?`,
     correctAnswer: fact.product,
     answerType: "choice",
@@ -164,33 +173,23 @@ function getCandidateFacts(progress, options) {
 }
 
 function getCandidateTables(progress, options) {
-  const unlockedTables = getUnlockedTables(progress);
+  const selectedTables = getSelectedTables(progress);
   const requestedTable = Number(options.table);
 
-  if (isValidTable(requestedTable) && unlockedTables.includes(requestedTable)) {
+  if (isValidTable(requestedTable) && selectedTables.includes(requestedTable)) {
     return [requestedTable];
   }
 
   if (Array.isArray(options.tables)) {
     const optionTables = options.tables.map(Number).filter(isValidTable);
-    const playableTables = TABLES.filter((table) => {
-      return optionTables.includes(table) && unlockedTables.includes(table);
-    });
+    const playableTables = selectedTables.filter((table) => optionTables.includes(table));
 
     if (playableTables.length > 0) {
       return playableTables;
     }
   }
 
-  return unlockedTables;
-}
-
-function getUnlockedTables(progress) {
-  const unlockedTables = Array.isArray(progress?.unlockedTables)
-    ? progress.unlockedTables.map(Number).filter(isValidTable)
-    : [];
-
-  return unlockedTables.length > 0 ? unlockedTables : [...INITIAL_UNLOCKED_TABLES];
+  return selectedTables;
 }
 
 function normalizeMode(mode) {
@@ -231,7 +230,30 @@ function uniqueNumbers(values) {
   return values.filter((value, index, list) => list.indexOf(value) === index);
 }
 
+function rotateAnswers(values, variant) {
+  if (values.length === 0) {
+    return values;
+  }
+
+  const offset = Math.abs(variant) % values.length;
+  return [...values.slice(offset), ...values.slice(0, offset)];
+}
+
+function normalizeVariant(value) {
+  return Number.isInteger(value) && value >= 0 ? value : 0;
+}
+
 function createFallbackAnswers(correctAnswer) {
-  return [correctAnswer + 1, correctAnswer - 1, correctAnswer + 2, correctAnswer + 5]
+  return [
+    correctAnswer + 1,
+    correctAnswer - 1,
+    correctAnswer + 2,
+    correctAnswer - 2,
+    correctAnswer + 3,
+    correctAnswer - 3,
+    correctAnswer + 5,
+    correctAnswer + 8,
+    correctAnswer + 12
+  ]
     .filter((answer) => answer > 0 && answer !== correctAnswer);
 }

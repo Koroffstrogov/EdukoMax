@@ -3,6 +3,10 @@ import { renderRewardReveal } from "../collectibles/reward-reveal.js";
 import {
   getChillRewardLabel
 } from "../premium-modes/chill-engine.js";
+import {
+  renderMagicBraceletsFeedback,
+  renderMagicBraceletsSession
+} from "../story-modes/magic-bracelets-renderer.js";
 
 export function renderMultiplicationSessionView(state) {
   const session = state.activeSession;
@@ -42,6 +46,8 @@ function renderMissingSession() {
 
 function renderSessionSummary(session, sessionRewards) {
   const totalBonusCoins = (sessionRewards?.bonusCoins || 0) +
+    (sessionRewards?.tableSelectionBonus || 0) +
+    (sessionRewards?.choice8BonusCoins || 0) +
     (sessionRewards?.premiumBonusCoins || 0);
   const rewardHtml = sessionRewards
     ? renderRewardReveal(sessionRewards.cards || [], sessionRewards.badges || [], totalBonusCoins)
@@ -61,6 +67,8 @@ function renderSessionSummary(session, sessionRewards) {
           <strong>${getSessionAccuracy(session)}%</strong>
           <span>de réussite sur cette session</span>
         </div>
+        ${renderTableSelectionBonus(sessionRewards)}
+        ${renderChoice8Bonus(sessionRewards)}
         ${rewardHtml}
         <div class="action-row">
           <button class="button button-primary" type="button" ${getReplayAttribute(session)}>
@@ -94,6 +102,10 @@ function renderSessionHeader(session) {
 }
 
 function renderQuestion(question) {
+  if (question.answerType === "bracelet-choice") {
+    return "";
+  }
+
   return `
     <div class="question-box">
       <p class="question-prompt">${question.prompt}</p>
@@ -114,7 +126,14 @@ function renderAnswerArea(session) {
 
 function getAnswerContent(session) {
   if (session.currentFeedback) {
+    if (session.currentQuestion.answerType === "bracelet-choice") {
+      return renderMagicBraceletsFeedback(session);
+    }
     return renderFeedback(session);
+  }
+
+  if (session.currentQuestion.answerType === "bracelet-choice") {
+    return renderMagicBraceletsSession(session);
   }
 
   if (session.currentQuestion.answerType === "choice") {
@@ -201,10 +220,27 @@ function renderSessionAside(session, coins) {
   `;
 }
 
+function renderTableSelectionBonus(sessionRewards) {
+  const bonus = sessionRewards?.tableSelectionBonus || 0;
+
+  return bonus > 0
+    ? `<p class="progress-line">Bonus tables actives : +${bonus} 🪙</p>`
+    : "";
+}
+
+function renderChoice8Bonus(sessionRewards) {
+  const bonus = sessionRewards?.choice8BonusCoins || 0;
+
+  return bonus > 0
+    ? `<p class="progress-line">Bonus QCM 8 choix : +${bonus} 🪙</p>`
+    : "";
+}
+
 function getModeLabel(modeId) {
   return {
     "direct-answer": "Réponse directe",
     "multiple-choice": "Choix rapide",
+    "multiple-choice-8": "QCM 8 choix",
     "visual-groups": "Groupes visuels",
     "missing-factor": "Facteur caché",
     mixed: "Mode mélange",
@@ -214,7 +250,8 @@ function getModeLabel(modeId) {
     "mascot-snack": "Goûter",
     "smart-review": "Révision intelligente",
     "anti-forget": "Anti-Oubli",
-    "clever-mix": "Mix malin"
+    "clever-mix": "Mix malin",
+    "magic-bracelets": "Bracelets Magiques"
   }[modeId] || "Session courte";
 }
 
@@ -232,10 +269,13 @@ function renderPremiumSummary(session, rewards) {
   const chill = session.packFamily === "chill"
     ? `<p class="progress-line">${getChillRewardLabel(session)}</p>`
     : "";
+  const story = rewards?.storySummary
+    ? `<p class="progress-line">${rewards.storySummary}</p>`
+    : "";
 
   return `
     <div class="shop-message" role="status">
-      ${rank || science || chill || "Mode spécial terminé !"}
+      ${rank || science || chill || story || "Mode spécial terminé !"}
     </div>
   `;
 }
@@ -273,6 +313,10 @@ function renderPremiumStats(session) {
 
   if (session.packFamily === "science") {
     return `<li><span>Coach</span><strong>facts utiles</strong></li>`;
+  }
+
+  if (session.modeId === "magic-bracelets") {
+    return `<li><span>Charms</span><strong>${session.charms}</strong></li>`;
   }
 
   return "";

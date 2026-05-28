@@ -8,7 +8,8 @@ import {
 const FAMILY_ROUTES = Object.freeze({
   competitive: ROUTES.modesCompetitive,
   chill: ROUTES.modesChill,
-  science: ROUTES.modesScience
+  science: ROUTES.modesScience,
+  story: ROUTES.modesBracelets
 });
 
 export function renderPremiumModesView(state, family = null) {
@@ -87,7 +88,7 @@ function renderLockedPackActions(pack, coins) {
   return `
     <span class="tag">${pack.price} 🪙</span>
     <p class="progress-line">
-      ${missing > 0 ? `Il te manque ${missing} 🪙` : "Prêt à ouvrir ce pack !"}
+      ${getLockedMessage(pack, missing)}
     </p>
     ${missing > 0 ? renderEarnCoinsButton() : `
       <button class="button button-primary" type="button" data-buy-pack="${pack.id}">
@@ -141,7 +142,8 @@ function renderLeaderboardAccess() {
 function renderPackTone(pack) {
   const text = {
     chill: "Pas de chrono ici : tu joues tranquillement et chaque réussite construit un petit monde.",
-    science: "Le coach choisit les multiplications utiles à revoir, sans bloquer les autres modes."
+    science: "Le coach choisit les multiplications utiles à revoir, sans bloquer les autres modes.",
+    story: "Un atelier calme et brillant : choisis les bons lots de perles pour créer des bracelets."
   }[pack.family] || "Un pack spécial pour varier les missions.";
   const action = pack.family === "science"
     ? `
@@ -159,6 +161,16 @@ function renderPackTone(pack) {
       ${action}
     </aside>
   `;
+}
+
+function getLockedMessage(pack, missing) {
+  if (missing <= 0) {
+    return "Prêt à ouvrir ce pack !";
+  }
+
+  return pack.id === "magic-bracelets"
+    ? `Il te manque ${missing} 🪙 pour ouvrir l'atelier.`
+    : `Il te manque ${missing} 🪙`;
 }
 
 function renderCoinPill(coins) {

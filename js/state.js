@@ -19,6 +19,7 @@ import {
 } from "./premium-modes/premium-session.js";
 import { getPackForMode } from "./premium-modes/mode-pack-data.js";
 import { buyModePack, isModePackOwned } from "./premium-modes/mode-pack-engine.js";
+import { toggleSelectedTable } from "./table-selection.js";
 import {
   activateProfile,
   addProfile,
@@ -143,6 +144,16 @@ export function startMultiplicationSession(modeId = SESSION_MODES.directAnswer, 
   appState.shopMessage = null;
 }
 
+export function toggleMultiplicationTable(table) {
+  ensureInitialized();
+  const before = appState.save.progress.multiplication.selectedTables || [];
+  const nextProgress = toggleSelectedTable(appState.save.progress.multiplication, table);
+
+  appState.save.progress.multiplication = nextProgress;
+  appState.shopMessage = buildTableToggleMessage(before, nextProgress.selectedTables, table);
+  touchSave();
+}
+
 export function startPremiumSession(modeId) {
   ensureInitialized();
   const pack = getPackForMode(modeId);
@@ -258,8 +269,9 @@ function shouldRecordSessionCompletion(session) {
 
 function normalizePlayableTable(table) {
   const numberTable = Number(table);
+  const selectedTables = appState.save.progress.multiplication.selectedTables || [];
 
-  if (appState.save.progress.multiplication.unlockedTables.includes(numberTable)) {
+  if (selectedTables.includes(numberTable)) {
     return numberTable;
   }
 
@@ -314,10 +326,6 @@ function attachRewardToFeedback(session, reward) {
 }
 
 function buildShopMessage(itemType, item) {
-  if (itemType === "table") {
-    return `Nouveau monde ouvert : ${item.label} ! ${item.icon}`;
-  }
-
   if (itemType === "theme") {
     return `Nouvelle ambiance débloquée : ${item.label} !`;
   }
@@ -327,6 +335,18 @@ function buildShopMessage(itemType, item) {
   }
 
   return null;
+}
+
+function buildTableToggleMessage(before, after, table) {
+  const numberTable = Number(table);
+
+  if (before.includes(numberTable) && after.includes(numberTable)) {
+    return "Garde au moins une table active pour jouer.";
+  }
+
+  return after.includes(numberTable)
+    ? `Table de ${numberTable} activée pour les jeux.`
+    : `Table de ${numberTable} mise en pause.`;
 }
 
 function setActiveTheme(theme) {

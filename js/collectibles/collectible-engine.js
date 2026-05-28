@@ -1,4 +1,5 @@
 import { COLLECTIBLE_CARDS, CARD_RARITIES } from "./collectible-data.js";
+import { getSelectedTables } from "../table-selection.js";
 
 /**
  * Determines cards earned after a session.
@@ -10,6 +11,11 @@ export function pickCardRewards(saveData, sessionSummary) {
 
   const masteryCards = pickMasteryCards(eligible, sessionSummary);
   picked.push(...masteryCards);
+
+  const maxCard = pickMaxCard(saveData, sessionSummary, picked);
+  if (maxCard) {
+    picked.push(maxCard);
+  }
 
   const commonCard = pickByRarity(eligible, CARD_RARITIES.COMMON, picked);
 
@@ -54,12 +60,39 @@ export function getEligibleCardsForSession(saveData, sessionSummary) {
       return false;
     }
 
+    if (card.rarity === CARD_RARITIES.MAX) {
+      return false;
+    }
+
     if (card.table === table || card.table === "mix") {
       return true;
     }
 
     return false;
   });
+}
+
+function pickMaxCard(saveData, sessionSummary, alreadyPicked) {
+  if (!canAwardMaxCard(saveData, sessionSummary)) {
+    return null;
+  }
+
+  const owned = getOwnedCardIds(saveData);
+  const pickedIds = new Set(alreadyPicked.map((card) => card.id));
+  const candidates = COLLECTIBLE_CARDS.filter((card) => {
+    return card.rarity === CARD_RARITIES.MAX &&
+      !owned.has(card.id) &&
+      !pickedIds.has(card.id);
+  });
+
+  return candidates.length > 0
+    ? candidates[Math.floor(Math.random() * candidates.length)]
+    : null;
+}
+
+function canAwardMaxCard(saveData, sessionSummary) {
+  const selectedTables = getSelectedTables(saveData?.progress?.multiplication);
+  return selectedTables.length === 9 && sessionSummary.accuracy > 0.9;
 }
 
 /**

@@ -13,8 +13,12 @@ export function renderRewardReveal(cardRewards, badgeRewards, bonusCoins) {
   }
 
   return `
-    <div class="reward-reveal" aria-live="polite" aria-label="Nouvelles récompenses">
-      <h2 class="reward-reveal__title">🎁 Nouvelles récompenses !</h2>
+    <details class="reward-reveal" aria-live="polite" aria-label="Nouvelles récompenses">
+      <summary class="reward-reveal__cover">
+        <span class="reward-reveal__gift" aria-hidden="true">🎁</span>
+        <span class="reward-reveal__title">Clique pour dévoiler tes cartes</span>
+        <span class="reward-reveal__hint">Les récompenses restent cachées jusqu'à ton clic.</span>
+      </summary>
       <div class="reward-reveal__items">
         ${cardRewards.map((card) => renderRevealCard(card)).join("")}
         ${badgeRewards.map((badge) => renderRevealBadge(badge)).join("")}
@@ -26,7 +30,7 @@ export function renderRewardReveal(cardRewards, badgeRewards, bonusCoins) {
           Voir ma collection
         </button>
       </div>
-    </div>
+    </details>
   `;
 }
 
@@ -100,12 +104,15 @@ function renderBonusCoins(amount) {
 
 function renderRevealMessage(cardRewards, badgeRewards) {
   const epic = cardRewards.find((c) => c.rarity === CARD_RARITIES.EPIC);
+  const max = cardRewards.find((c) => c.rarity === CARD_RARITIES.MAX);
   const mastery = cardRewards.find((c) => c.rarity === CARD_RARITIES.MASTERY);
   const rare = cardRewards.find((c) => c.rarity === CARD_RARITIES.RARE);
 
   let message = "Bien joué, continue comme ça !";
 
-  if (mastery) {
+  if (max) {
+    message = "🌟 Carte MAX ! Toutes les tables étaient dans le défi !";
+  } else if (mastery) {
     message = "🏆 Carte de maîtrise débloquée ! Tu es un champion !";
   } else if (epic) {
     message = "🌟 Incroyable ! Une carte épique !";
@@ -123,6 +130,7 @@ function getRarityLabel(rarity) {
     [CARD_RARITIES.COMMON]: "Commune",
     [CARD_RARITIES.RARE]: "Rare",
     [CARD_RARITIES.EPIC]: "Épique",
-    [CARD_RARITIES.MASTERY]: "Maîtrise"
+    [CARD_RARITIES.MASTERY]: "Maîtrise",
+    [CARD_RARITIES.MAX]: "MAX"
   }[rarity] || rarity;
 }

@@ -5,7 +5,7 @@ import { getCollectionStats } from "../collectibles/collectible-engine.js";
 export function renderHomeView(state) {
   const profileName = escapeHtml(state.save.profile.name);
   const themeLabel = getThemeLabel(state.save.settings.theme);
-  const unlockedTables = state.save.progress.multiplication.unlockedTables;
+  const selectedTables = state.save.progress.multiplication.selectedTables;
   const collectionStats = getCollectionStats(state.save);
 
   return `
@@ -15,8 +15,8 @@ export function renderHomeView(state) {
           <p class="eyebrow">Socle prêt</p>
           <h1 id="home-title">Bonjour ${profileName}</h1>
           <p>
-            Gagne des pièces avec tes bonnes réponses, puis complète ta
-            collection de tables et d'ambiances.
+            Choisis les tables à mélanger, gagne des pièces avec tes bonnes
+            réponses, puis complète tes ambiances et modes spéciaux.
           </p>
           <div class="action-row">
             <button class="button button-primary" type="button" data-route="multiplication">
@@ -38,7 +38,7 @@ export function renderHomeView(state) {
         <h2 id="status-title">Tableau de bord</h2>
         <ul class="status-list">
           <li><span>Pièces</span><strong>🪙 ${state.save.rewards.coins}</strong></li>
-          <li><span>Tables prêtes</span><strong>${unlockedTables.join(", ")}</strong></li>
+          <li><span>Tables actives</span><strong>${selectedTables.join(", ")}</strong></li>
           <li><span>Thème actif</span><strong>${themeLabel}</strong></li>
           <li><span>Sessions terminées</span><strong>${state.save.sessions.completed}</strong></li>
           <li><span>Collection</span><strong>${collectionStats.ownedCards} cartes</strong></li>
@@ -51,7 +51,7 @@ export function renderHomeView(state) {
 function renderSubjectGrid() {
   return `
     <section class="subject-grid" aria-label="Domaines de maths">
-      ${renderSubjectCard("&times;", "Multiplications", "Tables de 2 à 10.", "Boutique ouverte", "multiplication")}
+      ${renderSubjectCard("&times;", "Multiplications", "Tables de 2 à 10.", "Tables libres", "multiplication")}
       ${renderSubjectCard("&frac12;", "Fractions", "Socle réservé pour la suite.", "Plus tard")}
       ${renderSubjectCard("x", "Équations", "Une inconnue, tranquillement.", "Plus tard")}
     </section>

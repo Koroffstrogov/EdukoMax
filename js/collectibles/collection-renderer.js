@@ -19,6 +19,7 @@ export function renderCollectionView(saveData, activeFilter = {}) {
         <h1 id="collection-title">Cartes & Badges</h1>
         ${renderProgress(cardStats, badgeStats)}
       </div>
+      ${renderCollectionHelp()}
       ${renderFilters(tableFilter, rarityFilter)}
       <section class="collection-section" aria-labelledby="cards-title">
         <h2 id="cards-title">Cartes <span class="collection-count">${cardStats.ownedCards}/${cardStats.totalCards}</span></h2>
@@ -64,7 +65,8 @@ function renderFilters(tableFilter, rarityFilter) {
     { value: "common", label: "Commune" },
     { value: "rare", label: "Rare" },
     { value: "epic", label: "Épique" },
-    { value: "mastery", label: "Maîtrise" }
+    { value: "mastery", label: "Maîtrise" },
+    { value: "max", label: "MAX" }
   ];
 
   return `
@@ -82,6 +84,20 @@ function renderFilters(tableFilter, rarityFilter) {
         </select>
       </label>
     </div>
+  `;
+}
+
+function renderCollectionHelp() {
+  return `
+    <aside class="collection-help" aria-label="Comment gagner des cartes">
+      <h2>Comment gagner des cartes ?</h2>
+      <p>Termine une manche pour tenter une carte. Plus tu réussis, plus les cartes brillent.</p>
+      <ul>
+        <li>75 % de réussite : une carte rare peut apparaître.</li>
+        <li>90 % ou sans erreur : une carte épique peut apparaître.</li>
+        <li>Toutes les tables activées et plus de 90 % : une carte MAX peut apparaître.</li>
+      </ul>
+    </aside>
   `;
 }
 
@@ -105,7 +121,9 @@ function renderCards(collectibles, tableFilter, rarityFilter) {
     return `<p class="collection-empty">Aucune carte dans ce filtre.</p>`;
   }
 
-  return filtered.map((card) => renderCard(card, owned.has(card.id), newlyUnlocked.has(card.id))).join("");
+  return sortCardsForDisplay(filtered)
+    .map((card) => renderCard(card, owned.has(card.id), newlyUnlocked.has(card.id)))
+    .join("");
 }
 
 function renderCard(card, isOwned, isNew) {
@@ -115,6 +133,17 @@ function renderCard(card, isOwned, isNew) {
   const universe = TABLE_UNIVERSES[card.table];
 
   if (!isOwned) {
+    if (card.rarity === CARD_RARITIES.MAX) {
+      return `
+        <article class="collectible-card ${rarityClass}${lockedClass}" aria-label="Carte MAX masquée">
+          <span class="collectible-card__emoji" aria-hidden="true">🌟</span>
+          <span class="collectible-card__name">Carte MAX masquée</span>
+          <span class="collectible-card__hint">9 tables actives + plus de 90 %</span>
+          <span class="collectible-card__rarity">${getRarityLabel(card.rarity)}</span>
+        </article>
+      `;
+    }
+
     return `
       <article class="collectible-card ${rarityClass}${lockedClass}" aria-label="Carte mystère">
         <span class="collectible-card__emoji" aria-hidden="true">❓</span>
@@ -134,6 +163,14 @@ function renderCard(card, isOwned, isNew) {
       <span class="collectible-card__rarity">${getRarityLabel(card.rarity)}</span>
     </article>
   `;
+}
+
+function sortCardsForDisplay(cards) {
+  return [...cards].sort((first, second) => {
+    if (first.rarity === CARD_RARITIES.MAX && second.rarity !== CARD_RARITIES.MAX) return -1;
+    if (second.rarity === CARD_RARITIES.MAX && first.rarity !== CARD_RARITIES.MAX) return 1;
+    return COLLECTIBLE_CARDS.indexOf(first) - COLLECTIBLE_CARDS.indexOf(second);
+  });
 }
 
 function renderBadges(collectibles) {
@@ -188,6 +225,7 @@ function getRarityLabel(rarity) {
     [CARD_RARITIES.COMMON]: "Commune",
     [CARD_RARITIES.RARE]: "Rare",
     [CARD_RARITIES.EPIC]: "Épique",
-    [CARD_RARITIES.MASTERY]: "Maîtrise"
+    [CARD_RARITIES.MASTERY]: "Maîtrise",
+    [CARD_RARITIES.MAX]: "MAX"
   }[rarity] || rarity;
 }

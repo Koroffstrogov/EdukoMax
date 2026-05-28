@@ -1,5 +1,7 @@
 import { getFactsForTable, isValidTable } from "../multiplication-data.js";
 import { calculateFactPriority, getFactMemoryState } from "../mastery-engine.js";
+import { getSpacedReviewScore } from "../spaced-repetition-engine.js";
+import { getSelectedTables } from "../table-selection.js";
 
 const CONFUSABLE_GROUPS = Object.freeze([
   ["6x7", "7x6", "8x7"],
@@ -58,6 +60,7 @@ function rankFragileFacts(progress, facts) {
     .map((fact) => ({
       fact,
       score: calculateFactPriority(progress?.facts?.[fact.id], now) +
+        getSpacedReviewScore(progress?.facts?.[fact.id], now) +
         getMemoryBoost(progress?.facts?.[fact.id])
     }))
     .sort(compareScoredFacts)
@@ -68,7 +71,9 @@ function rankOldFacts(progress, facts) {
   return facts
     .map((fact) => ({
       fact,
-      score: getAgeScore(progress?.facts?.[fact.id]) + getEasyMotivationBoost(progress?.facts?.[fact.id])
+      score: getAgeScore(progress?.facts?.[fact.id]) +
+        getSpacedReviewScore(progress?.facts?.[fact.id]) +
+        getEasyMotivationBoost(progress?.facts?.[fact.id])
     }))
     .sort(compareScoredFacts)
     .map((entry) => entry.fact);
@@ -85,12 +90,7 @@ function rankConfusableFacts(progress, facts) {
 }
 
 function getPlayableFacts(progress) {
-  const unlockedTables = Array.isArray(progress?.unlockedTables)
-    ? progress.unlockedTables.map(Number).filter(isValidTable)
-    : [];
-  const tables = unlockedTables.length > 0 ? unlockedTables : [2, 5, 10];
-
-  return tables.flatMap(getFactsForTable);
+  return getSelectedTables(progress).flatMap(getFactsForTable);
 }
 
 function getMemoryBoost(factProgress) {

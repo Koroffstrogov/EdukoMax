@@ -34,9 +34,9 @@ test("anti-forget prioritizes old reviewed facts", () => {
   assertEqual(facts[0].id, "10x10");
 });
 
-test("clever mix never selects locked tables", () => {
+test("clever mix only selects active tables", () => {
   const save = createDefaultSave();
-  save.progress.multiplication.unlockedTables = [2, 5, 10];
+  save.progress.multiplication.selectedTables = [2, 5, 10];
 
   const facts = selectScienceFacts(save.progress.multiplication, "clever-mix", { count: 10 });
 

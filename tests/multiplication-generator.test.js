@@ -7,8 +7,8 @@ import {
   QUESTION_MODES
 } from "../js/multiplication-generator.js";
 
-function makeProgress(unlockedTables = [2, 5, 10], facts = {}) {
-  return { unlockedTables, facts };
+function makeProgress(selectedTables = [2, 5, 10], facts = {}) {
+  return { selectedTables, facts };
 }
 
 test("generator: direct-answer question has table, factor, and product", () => {
@@ -31,6 +31,16 @@ test("generator: multiple-choice has exactly 4 choices", () => {
   assertEqual(q.choices.length, 4, "4 choices");
 });
 
+test("generator: multiple-choice-8 has exactly 8 choices", () => {
+  const q = generateMultiplicationQuestion(makeProgress(), { mode: "multiple-choice-8" });
+  const values = q.choices.map((choice) => choice.value);
+
+  assertEqual(q.mode, QUESTION_MODES.multipleChoice8);
+  assertEqual(q.choices.length, 8, "8 choices");
+  assert(values.includes(q.correctAnswer), "correct answer in choices");
+  assertEqual(new Set(values).size, 8, "choices are distinct");
+});
+
 test("generator: correct answer is present in choices", () => {
   const q = generateMultiplicationQuestion(makeProgress(), { mode: "multiple-choice" });
   const values = q.choices.map((c) => c.value);
@@ -43,6 +53,24 @@ test("generator: wrong choices differ from correct answer", () => {
   for (const choice of wrong) {
     assert(choice.value !== q.correctAnswer, `wrong choice ${choice.value} != ${q.correctAnswer}`);
   }
+});
+
+test("generator: repeated QCM fact can receive different propositions", () => {
+  const first = generateMultiplicationQuestion(makeProgress(), {
+    mode: "multiple-choice",
+    factId: "6x7",
+    choiceVariant: 0
+  });
+  const second = generateMultiplicationQuestion(makeProgress(), {
+    mode: "multiple-choice",
+    factId: "6x7",
+    choiceVariant: 1
+  });
+
+  assert(
+    getChoiceSignature(first) !== getChoiceSignature(second),
+    "same fact receives a different choice set"
+  );
 });
 
 test("generator: generateWrongAnswers returns distinct positive values", () => {
@@ -93,26 +121,41 @@ test("generator: prioritizes facts with many errors over untouched facts", () =>
     };
   }
 
-  const progress = { unlockedTables: [2], facts };
+  const progress = { selectedTables: [2], facts };
   const chosen = choosePriorityMultiplication(progress, { tables: [2] });
 
   // The fact with many errors should be prioritized
   assertEqual(chosen.id, "2x3", "prioritizes error-heavy fact");
 });
 
-test("generator: ignores locked table even when requested", () => {
+test("generator: ignores inactive table even when requested", () => {
   const progress = makeProgress([2], {});
   const chosen = choosePriorityMultiplication(progress, { table: 7 });
 
-  assertEqual(chosen.table, 2, "locked table 7 is not selected");
+  assertEqual(chosen.table, 2, "inactive table 7 is not selected");
 });
 
-test("generator: only chooses among unlocked requested tables", () => {
+test("generator: only chooses among active requested tables", () => {
   const progress = makeProgress([2, 5], {});
   const question = generateMultiplicationQuestion(progress, {
     mode: "direct-answer",
     tables: [5, 7]
   });
 
-  assertEqual(question.table, 5, "table 7 ignored because it is locked");
+  assertEqual(question.table, 5, "table 7 ignored because it is inactive");
 });
+
+test("generator: falls back to legacy unlockedTables when selectedTables is missing", () => {
+  const question = generateMultiplicationQuestion({ unlockedTables: [7], facts: {} }, {
+    mode: "direct-answer"
+  });
+
+  assertEqual(question.table, 7);
+});
+
+function getChoiceSignature(question) {
+  return question.choices
+    .map((choice) => choice.value)
+    .sort((first, second) => first - second)
+    .join(",");
+}

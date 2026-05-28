@@ -2,9 +2,12 @@ import { test } from "./test-runner.js";
 import { assert } from "./test-utils.js";
 import { pickCardRewards, applyCardRewards, getEligibleCardsForSession, normalizeCollectibles, markCollectiblesSeen, getCollectionStats } from "../js/collectibles/collectible-engine.js";
 import { COLLECTIBLE_CARDS, CARD_RARITIES } from "../js/collectibles/collectible-data.js";
+import { renderCollectionView } from "../js/collectibles/collection-renderer.js";
+import { renderRewardReveal } from "../js/collectibles/reward-reveal.js";
 
-function createSave(ownedCards = []) {
+function createSave(ownedCards = [], selectedTables = [2, 5, 10]) {
   return {
+    progress: { multiplication: { selectedTables } },
     collectibles: {
       cards: { owned: [...ownedCards], newlyUnlocked: [] },
       badges: { owned: [], newlyUnlocked: [] },
@@ -58,6 +61,22 @@ test("pickCardRewards gives mastery card when table is newly mastered", () => {
   assert(hasMastery, "mastery card awarded");
 });
 
+test("pickCardRewards does not give max card unless all tables are active", () => {
+  const save = createSave([], [2, 5, 10]);
+  const summary = { table: 2, accuracy: 1, perfect: true, bestStreak: 8, masteredTablesBefore: [], masteredTablesAfter: [] };
+  const result = pickCardRewards(save, summary);
+  const hasMax = result.cards.some((c) => c.rarity === CARD_RARITIES.MAX);
+  assert(!hasMax, "max card not awarded");
+});
+
+test("pickCardRewards gives max card with all tables active and more than 90 percent", () => {
+  const save = createSave([], [2, 3, 4, 5, 6, 7, 8, 9, 10]);
+  const summary = { table: 2, accuracy: 0.91, perfect: false, bestStreak: 8, masteredTablesBefore: [], masteredTablesAfter: [] };
+  const result = pickCardRewards(save, summary);
+  const hasMax = result.cards.some((c) => c.rarity === CARD_RARITIES.MAX);
+  assert(hasMax, "max card awarded");
+});
+
 test("pickCardRewards returns max 3 cards", () => {
   const save = createSave();
   const summary = { table: 2, accuracy: 1, perfect: true, bestStreak: 8, masteredTablesBefore: [], masteredTablesAfter: [2] };
@@ -80,5 +99,25 @@ test("getCollectionStats counts correctly", () => {
   assert(stats.ownedCards === 2, "2 owned cards");
   assert(stats.totalCards === COLLECTIBLE_CARDS.length, "total cards correct");
   assert(stats.percent > 0, "percent > 0");
+});
+
+test("renderRewardReveal hides cards behind a clickable reveal cover", () => {
+  const maxCard = COLLECTIBLE_CARDS.find((card) => card.rarity === CARD_RARITIES.MAX);
+  const html = renderRewardReveal([maxCard], [], 0);
+
+  assert(html.includes("<details"), "uses details disclosure");
+  assert(html.includes("<summary"), "uses clickable summary");
+  assert(html.includes("Clique pour dévoiler tes cartes"), "child click instruction is visible");
+  assert(html.includes("Carte MAX"), "max reward message is visible");
+});
+
+test("renderCollectionView shows max cards as masked placeholders from start", () => {
+  const html = renderCollectionView(createSave());
+  const firstMaxIndex = html.indexOf("Carte MAX masquée");
+  const firstRegularMysteryIndex = html.indexOf("Carte mystère");
+
+  assert((html.match(/collectible-card--max/g) || []).length >= 3, "max placeholders rendered");
+  assert(html.includes("9 tables actives + plus de 90 %"), "max unlock hint visible");
+  assert(firstMaxIndex > 0 && firstMaxIndex < firstRegularMysteryIndex, "max cards appear first");
 });
 

@@ -1,7 +1,7 @@
 import { test } from "./test-runner.js";
 import { assert, assertEqual, assertDeepEqual } from "./test-utils.js";
 import { loadSave, saveGame, clearSave, createDefaultSave } from "../js/storage.js";
-import { activateProfile, addProfile, removeProfile } from "../js/save-data.js";
+import { activateProfile, addProfile, normalizeSave, removeProfile } from "../js/save-data.js";
 
 // Stub localStorage for test isolation
 function withCleanStorage(fn) {
@@ -30,8 +30,10 @@ test("storage: absent save creates a valid default state", () => {
     assert(save.progress.multiplication.unlockedTables.includes(2), "table 2 unlocked");
     assert(save.progress.multiplication.unlockedTables.includes(5), "table 5 unlocked");
     assert(save.progress.multiplication.unlockedTables.includes(10), "table 10 unlocked");
+    assertDeepEqual(save.progress.multiplication.selectedTables, [2, 5, 10]);
     assert(save.progress.multiplication.unlockedModes.includes("direct-answer"), "direct mode unlocked");
     assert(save.progress.multiplication.unlockedModes.includes("multiple-choice"), "QCM unlocked");
+    assert(save.progress.multiplication.unlockedModes.includes("multiple-choice-8"), "QCM 8 unlocked");
     assert(save.progress.multiplication.unlockedModes.includes("visual-groups"), "visual groups unlocked");
     assert(save.progress.multiplication.unlockedModes.includes("missing-factor"), "missing factor unlocked");
     assert(save.progress.multiplication.unlockedModes.includes("mixed"), "mix unlocked");
@@ -46,7 +48,7 @@ test("storage: absent save creates a valid default state", () => {
 test("storage: profile switch restores profile-specific progress", () => {
   const firstSave = createDefaultSave({ name: "Lina", icon: "👧" });
   firstSave.rewards.coins = 12;
-  firstSave.progress.multiplication.unlockedTables.push(3);
+  firstSave.progress.multiplication.selectedTables.push(3);
   firstSave.progress.multiplication.facts["3x4"].attempts = 4;
   firstSave.progress.multiplication.facts["3x4"].needsPractice = true;
 
@@ -64,7 +66,7 @@ test("storage: profile switch restores profile-specific progress", () => {
   const restoredFirst = activateProfile(secondSave, firstSave.activeProfileId);
   assertEqual(restoredFirst.profile.name, "Lina");
   assertEqual(restoredFirst.rewards.coins, 12, "coins restored");
-  assert(restoredFirst.progress.multiplication.unlockedTables.includes(3), "table restored");
+  assert(restoredFirst.progress.multiplication.selectedTables.includes(3), "table selection restored");
   assertEqual(restoredFirst.progress.multiplication.facts["3x4"].attempts, 4, "fact memory restored");
   assertEqual(restoredFirst.progress.multiplication.facts["3x4"].needsPractice, true, "practice flag restored");
 });
@@ -91,8 +93,17 @@ test("storage: partial save is normalized", () => {
     assert(save.rewards.ownedThemes.includes("cosmic-cats"), "mapped theme owned");
     assertEqual(save.rewards.coins, 5, "coins preserved");
     assert(Array.isArray(save.progress.multiplication.unlockedTables), "tables normalized");
+    assertDeepEqual(save.progress.multiplication.selectedTables, [2, 5, 10]);
     assertEqual(Object.keys(save.progress.multiplication.facts).length, 81, "all facts initialized");
   });
+});
+
+test("storage: legacy unlocked tables seed selectedTables", () => {
+  const save = normalizeSave({
+    progress: { multiplication: { unlockedTables: [2, 5, 10, 7] } }
+  });
+
+  assertDeepEqual(save.progress.multiplication.selectedTables, [2, 5, 10, 7]);
 });
 
 test("storage: corrupted save does not block the app", () => {
@@ -119,7 +130,7 @@ test("storage: active profile payload is saved inside profiles", () => {
   withCleanStorage(() => {
     const save = createDefaultSave({ name: "Mila", icon: "🚀" });
     save.rewards.coins = 23;
-    save.progress.multiplication.unlockedTables.push(3);
+    save.progress.multiplication.selectedTables.push(3);
     save.premiumModes.ownedPacks.push("chill-pack");
 
     saveGame(save);
@@ -127,7 +138,7 @@ test("storage: active profile payload is saved inside profiles", () => {
     const storedProfile = loaded.profiles.find((profile) => profile.id === loaded.activeProfileId);
 
     assertEqual(storedProfile.rewards.coins, 23);
-    assert(storedProfile.progress.multiplication.unlockedTables.includes(3), "profile owns table 3");
+    assert(storedProfile.progress.multiplication.selectedTables.includes(3), "profile selected table 3");
     assert(storedProfile.premiumModes.ownedPacks.includes("chill-pack"), "profile owns chill pack");
   });
 });

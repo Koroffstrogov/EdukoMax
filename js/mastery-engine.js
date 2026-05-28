@@ -1,4 +1,5 @@
 import { getFactsForTable } from "./multiplication-data.js";
+import { getSpacedReviewScore } from "./spaced-repetition-engine.js";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -14,6 +15,10 @@ export function createDefaultFactProgress() {
     averageResponseMs: null,
     mastery: 0,
     needsPractice: false,
+    nextReviewAt: null,
+    reviewIntervalDays: 0,
+    retrievalStrength: 0,
+    lastDifficulty: "new",
     modeStats: {}
   };
 }
@@ -91,10 +96,11 @@ export function calculateFactPriority(factProgress, now = new Date()) {
   const hesitationBoost = calculateHesitationBoost(fact.averageResponseMs);
   const memoryBoost = getMemoryPriorityBoost(getFactMemoryState(fact));
   const practiceBoost = fact.needsPractice ? 14 : 0;
+  const spacedBoost = getSpacedReviewScore(fact, now) * 0.4;
 
   return clampScore(
     masteryGap + recentErrorBoost + ageBoost + lowPracticeBoost +
-    hesitationBoost + memoryBoost + practiceBoost - streakEase
+    hesitationBoost + memoryBoost + practiceBoost + spacedBoost - streakEase
   );
 }
 

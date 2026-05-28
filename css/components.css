@@ -90,6 +90,9 @@
 .nav-button:hover,
 .button:hover,
 button.subject-card:hover,
+.table-toggle-card:hover,
+.mode-mini-card:hover,
+.table-number-tile:hover,
 .theme-button:hover {
   transform: translateY(-1px);
 }
@@ -198,6 +201,40 @@ button.subject-card:hover,
 
 .coin-pill span:first-child {
   color: var(--color-warning);
+}
+
+.coin-bonus-panel {
+  display: grid;
+  gap: var(--space-3);
+  min-width: min(100%, 280px);
+}
+
+.table-bonus-card {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-4);
+  border: 2px solid color-mix(in srgb, var(--color-warning) 55%, white);
+  border-radius: var(--radius-md);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.78)),
+    linear-gradient(135deg, var(--color-warning), var(--color-secondary));
+  color: var(--color-ink);
+  box-shadow: var(--shadow-soft);
+}
+
+.table-bonus-card strong {
+  color: var(--color-primary);
+  font-size: var(--font-xl);
+  line-height: 1;
+}
+
+.table-bonus-card span {
+  color: var(--color-muted);
+  font-weight: 900;
+}
+
+.table-bonus-card__label {
+  color: var(--color-ink) !important;
 }
 
 .profile-area {
@@ -360,8 +397,90 @@ button.subject-card:hover,
   color: var(--color-muted);
 }
 
+.mode-mini-card {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: center;
+  min-height: 104px;
+  padding: var(--space-3);
+  border: 2px solid color-mix(in srgb, var(--color-secondary) 34%, white);
+  border-radius: var(--radius-md);
+  background:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--color-warning) 22%, transparent), transparent 42%),
+    var(--color-surface);
+  box-shadow: var(--shadow-soft);
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast),
+    border-color var(--transition-fast);
+}
+
+.mode-mini-card:hover {
+  border-color: var(--color-secondary);
+  box-shadow: 0 16px 34px rgba(32, 48, 74, 0.16);
+}
+
+.mode-mini-card__icon {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  place-items: center;
+  border-radius: 18px;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  color: var(--color-primary-ink);
+  font-size: var(--font-xl);
+  font-weight: 900;
+  box-shadow: var(--shadow-button);
+}
+
+.mode-mini-card__copy {
+  min-width: 0;
+}
+
+.mode-mini-card h3 {
+  margin: 0;
+  font-size: var(--font-md);
+}
+
+.mode-mini-card p {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: var(--font-xs);
+  font-weight: 900;
+}
+
 .table-card {
   min-height: 212px;
+}
+
+button.shop-card {
+  color: var(--color-ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.table-toggle-card {
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast),
+    opacity var(--transition-fast);
+}
+
+.table-toggle-card.is-muted {
+  border-style: dashed;
+  opacity: 0.72;
+  background: color-mix(in srgb, var(--color-surface) 72%, var(--color-line));
+}
+
+.table-toggle-card.is-selected .table-token {
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--color-secondary) 36%, transparent);
+}
+
+.table-toggle-card:focus-visible {
+  outline: 4px solid color-mix(in srgb, var(--color-primary) 42%, white);
+  outline-offset: 3px;
 }
 
 .table-token {
@@ -380,6 +499,106 @@ button.subject-card:hover,
   min-height: 24px;
   color: var(--color-muted);
   font-weight: 900;
+}
+
+.table-number-tile {
+  position: relative;
+  display: grid;
+  gap: var(--space-1);
+  min-height: 178px;
+  padding: var(--space-3);
+  border: 3px solid transparent;
+  border-radius: var(--radius-md);
+  color: var(--color-ink);
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: var(--shadow-soft);
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast),
+    filter var(--transition-fast);
+  animation: toggle-pop 320ms ease both;
+}
+
+.table-number-tile.is-selected {
+  border-color: color-mix(in srgb, var(--color-secondary) 68%, white);
+  background:
+    radial-gradient(circle at 84% 16%, rgba(255, 255, 255, 0.42), transparent 28%),
+    linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  color: white;
+}
+
+.table-number-tile.is-muted {
+  border-color: color-mix(in srgb, var(--color-muted) 38%, white);
+  background:
+    radial-gradient(circle at 84% 16%, color-mix(in srgb, var(--color-warning) 20%, transparent), transparent 30%),
+    color-mix(in srgb, var(--color-surface) 70%, var(--color-line));
+  color: color-mix(in srgb, var(--color-ink) 72%, white);
+}
+
+.table-number-tile:hover {
+  box-shadow: 0 18px 42px rgba(32, 48, 74, 0.18);
+}
+
+.table-number-tile:hover .table-number {
+  transform: rotate(-2deg) scale(1.06);
+}
+
+.table-number-tile:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+.table-number-tile:focus-visible {
+  outline: 4px solid color-mix(in srgb, var(--color-warning) 58%, white);
+  outline-offset: 3px;
+}
+
+.table-state-badge {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  min-width: 46px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--color-primary);
+  font-size: var(--font-xs);
+  font-weight: 900;
+  box-shadow: var(--shadow-soft);
+}
+
+.table-number-tile.is-muted .table-state-badge {
+  background: color-mix(in srgb, var(--color-line) 72%, white);
+  color: var(--color-muted);
+}
+
+.table-world-emoji {
+  font-size: var(--font-lg);
+  line-height: 1;
+}
+
+.table-number {
+  display: block;
+  font-size: clamp(3rem, 7vw, 4.8rem);
+  font-weight: 900;
+  line-height: 0.9;
+  transition: transform var(--transition-fast);
+}
+
+.table-state-text,
+.table-mini-progress {
+  font-weight: 900;
+}
+
+.table-state-text {
+  font-size: var(--font-md);
+}
+
+.table-mini-progress {
+  color: inherit;
+  font-size: var(--font-xs);
+  opacity: 0.9;
 }
 
 .panel h2,
@@ -877,10 +1096,138 @@ button.subject-card:active {
   background: var(--color-accent);
 }
 
+.magic-bracelets {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.bracelet-order-card {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  gap: var(--space-4);
+  align-items: center;
+  padding: var(--space-4);
+  border: 2px solid color-mix(in srgb, var(--color-primary) 44%, white);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 12% 14%, color-mix(in srgb, var(--color-warning) 32%, transparent), transparent 32%),
+    linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 14%, white), color-mix(in srgb, var(--color-secondary) 18%, white));
+}
+
+.bracelet-order-card h2 {
+  margin-bottom: var(--space-1);
+  font-size: var(--font-xl);
+}
+
+.bracelet-workshop {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: 30px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.66)),
+    radial-gradient(circle at top right, color-mix(in srgb, var(--color-secondary) 34%, transparent), transparent 34%);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--color-secondary) 20%, white);
+}
+
+.bracelet-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.bracelet-slot {
+  display: inline-flex;
+  min-width: 76px;
+  min-height: 54px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: var(--space-2);
+  border: 3px dashed color-mix(in srgb, var(--color-primary) 54%, white);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--color-primary);
+  font-weight: 900;
+}
+
+.bracelet-slot--filled {
+  border-style: solid;
+  background: linear-gradient(135deg, #fff2fb, #e8fbff);
+  animation: bracelet-fill 520ms ease both;
+}
+
+.bracelet-slot i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-warning));
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.72);
+}
+
+.pearl-lot-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.pearl-lot {
+  display: grid;
+  gap: var(--space-1);
+  min-height: 84px;
+  place-items: center;
+  border: 3px solid color-mix(in srgb, var(--color-primary) 38%, white);
+  border-radius: 26px;
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.92), transparent 42%),
+    linear-gradient(135deg, var(--color-surface), color-mix(in srgb, var(--color-warning) 18%, white));
+  color: var(--color-ink);
+  box-shadow: var(--shadow-button);
+  font-size: var(--font-lg);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.pearl-lot:hover,
+.pearl-lot:focus-visible {
+  transform: translateY(-4px) rotate(-1deg);
+  box-shadow: 0 18px 36px rgba(32, 48, 74, 0.18);
+}
+
+.charm-reward {
+  display: grid;
+  width: 64px;
+  height: 64px;
+  place-items: center;
+  border-radius: 24px;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  box-shadow: var(--shadow-button);
+  color: var(--color-primary-ink);
+  font-size: var(--font-xl);
+}
+
+.bracelet-success-sparkle {
+  position: relative;
+  overflow: hidden;
+}
+
+.bracelet-success-sparkle::after {
+  position: absolute;
+  inset: -30%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.9) 0 8%, transparent 10% 100%);
+  background-size: 54px 54px;
+  content: "";
+  opacity: 0.5;
+  animation: sparkle-drift 900ms ease both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .nav-button:hover,
   .button:hover,
   button.subject-card:hover,
+  .table-toggle-card:hover,
+  .mode-mini-card:hover,
+  .table-number-tile:hover,
+  .table-number-tile:hover .table-number,
   .theme-button:hover {
     transform: none;
   }
@@ -888,8 +1235,16 @@ button.subject-card:active {
   .feedback-card--success,
   .victory-burst,
   .coin-pill--bump,
-  .shop-message {
+  .table-number-tile,
+  .shop-message,
+  .bracelet-slot--filled,
+  .bracelet-success-sparkle::after {
     animation: none;
+  }
+
+  .pearl-lot:hover,
+  .pearl-lot:focus-visible {
+    transform: none;
   }
 }
 
@@ -917,6 +1272,30 @@ button.subject-card:active {
   }
 }
 
+@keyframes bracelet-fill {
+  0% {
+    transform: scale(0.92);
+  }
+
+  60% {
+    transform: scale(1.07);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes sparkle-drift {
+  0% {
+    transform: translateX(-18%) rotate(-8deg);
+  }
+
+  100% {
+    transform: translateX(12%) rotate(4deg);
+  }
+}
+
 @keyframes coin-pulse {
   0% {
     transform: scale(1);
@@ -925,6 +1304,20 @@ button.subject-card:active {
   45% {
     transform: scale(1.12);
     box-shadow: 0 12px 28px rgba(250, 204, 21, 0.34);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes toggle-pop {
+  0% {
+    transform: scale(0.96);
+  }
+
+  58% {
+    transform: scale(1.025);
   }
 
   100% {
@@ -951,5 +1344,18 @@ button.subject-card:active {
 
   .shop-hero {
     display: grid;
+  }
+
+  .mode-mini-card {
+    grid-template-columns: 52px minmax(0, 1fr);
+  }
+
+  .mode-mini-card .button {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .table-number-tile {
+    min-height: 156px;
   }
 }

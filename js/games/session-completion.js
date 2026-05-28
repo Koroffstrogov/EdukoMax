@@ -1,4 +1,5 @@
 import { calculateTableMastery } from "../mastery-engine.js";
+import { calculateTableSelectionBonus } from "../table-selection.js";
 import { pickCardRewards, applyCardRewards } from "../collectibles/collectible-engine.js";
 import { evaluateBadges, applyBadgeRewards, updateStatsAfterSession } from "../collectibles/badge-engine.js";
 import {
@@ -6,6 +7,11 @@ import {
   recordCompetitiveScore
 } from "../premium-modes/competitive-engine.js";
 import { summarizeScienceFocus } from "../premium-modes/science-review-engine.js";
+import {
+  MAGIC_BRACELETS_CONFIG,
+  MAGIC_BRACELETS_MODE_ID
+} from "../story-modes/magic-bracelets-data.js";
+import { summarizeMagicBraceletsSession } from "../story-modes/magic-bracelets-engine.js";
 
 export function completeSession(save, session) {
   const nextSave = save;
@@ -23,6 +29,10 @@ export function completeSession(save, session) {
   applyBadgeRewards(nextSave, badgeResult);
 
   addCoins(nextSave, cardResult.bonusCoins);
+  const tableSelectionBonus = calculateTableSelectionBonus(nextSave.progress.multiplication);
+  addCoins(nextSave, tableSelectionBonus);
+  const choice8BonusCoins = calculateChoice8Bonus(completedSession);
+  addCoins(nextSave, choice8BonusCoins);
 
   const premiumResult = applyPremiumCompletion(nextSave, completedSession, sessionSummary);
 
@@ -37,12 +47,21 @@ export function completeSession(save, session) {
       cards: cardResult.cards,
       badges: badgeResult,
       bonusCoins: cardResult.bonusCoins,
+      tableSelectionBonus,
+      choice8BonusCoins,
       premiumBonusCoins: premiumResult.bonusCoins,
       premiumXp: premiumResult.xpBonus,
       leaderboardRank: premiumResult.rank,
-      scienceSummary: premiumResult.scienceSummary
+      scienceSummary: premiumResult.scienceSummary,
+      storySummary: premiumResult.storySummary
     }
   };
+}
+
+function calculateChoice8Bonus(session) {
+  return session.modeId === "multiple-choice-8"
+    ? Math.floor(session.correctCount / 2)
+    : 0;
 }
 
 export function buildSessionSummary(save, session) {
@@ -67,15 +86,18 @@ export function buildSessionSummary(save, session) {
 
 function applyPremiumCompletion(save, session, summary) {
   if (session.type !== "premium") {
-    return { save, bonusCoins: 0, xpBonus: 0, rank: null, scienceSummary: null };
+    return createEmptyPremiumResult(save);
   }
 
   let nextSave = save;
   let rank = null;
   const bonusCoins = calculateCompetitiveBonus(summary);
-  const xpBonus = session.packFamily === "science" ? 5 : 0;
+  const xpBonus = getPremiumXpBonus(session);
   const scienceSummary = session.packFamily === "science"
     ? summarizeScienceFocus(session)
+    : null;
+  const storySummary = session.modeId === MAGIC_BRACELETS_MODE_ID
+    ? summarizeMagicBraceletsSession(session)
     : null;
 
   if (session.packFamily === "competitive") {
@@ -87,7 +109,19 @@ function applyPremiumCompletion(save, session, summary) {
   addCoins(nextSave, bonusCoins);
   nextSave.rewards.xp += xpBonus;
 
-  return { save: nextSave, bonusCoins, xpBonus, rank, scienceSummary };
+  return { save: nextSave, bonusCoins, xpBonus, rank, scienceSummary, storySummary };
+}
+
+function createEmptyPremiumResult(save) {
+  return { save, bonusCoins: 0, xpBonus: 0, rank: null, scienceSummary: null, storySummary: null };
+}
+
+function getPremiumXpBonus(session) {
+  if (session.packFamily === "science") {
+    return 5;
+  }
+
+  return session.modeId === MAGIC_BRACELETS_MODE_ID ? MAGIC_BRACELETS_CONFIG.xpBonus : 0;
 }
 
 function addCoins(save, coins) {

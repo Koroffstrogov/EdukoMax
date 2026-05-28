@@ -1,12 +1,18 @@
 import { QUESTION_MODES, generateMultiplicationQuestion } from "../multiplication-generator.js";
 import { createMultiplicationFeedback } from "../multiplication-feedback.js";
 import { recordMultiplicationAnswer } from "../progress-engine.js";
+import { buildPracticeQueue } from "../practice-planner.js";
 import {
   getModeById,
   getPackForMode,
   isKnownPremiumMode
 } from "./mode-pack-data.js";
 import { selectScienceFacts } from "./science-review-engine.js";
+import { MAGIC_BRACELETS_MODE_ID } from "../story-modes/magic-bracelets-data.js";
+import {
+  createMagicBraceletsFeedback,
+  createMagicBraceletsQuestion
+} from "../story-modes/magic-bracelets-engine.js";
 
 const MODE_SEQUENCE = Object.freeze([
   QUESTION_MODES.directAnswer,
@@ -48,10 +54,11 @@ export function createPremiumSession(saveData, modeId, options = {}) {
     startedAt: new Date().toISOString(),
     startedAtMs: Date.now(),
     questionStartedAt: Date.now(),
-    factQueue: buildFactQueue(progress, mode.id, totalQuestions),
+    factQueue: buildFactQueue(progress, mode.id, pack.family, totalQuestions),
     timeLimitMs: mode.id === "speed-60" ? 60000 : null,
     flowers: 0,
-    snacks: 0
+    snacks: 0,
+    charms: 0
   };
 
   return {
@@ -107,9 +114,10 @@ export function advancePremiumSession(session, progress) {
     return markPremiumComplete(nextSession);
   }
 
+  const spacedSession = preventThirdRepeat(nextSession);
   return markPremiumComplete({
-    ...nextSession,
-    currentQuestion: generatePremiumQuestion(progress, nextSession)
+    ...spacedSession,
+    currentQuestion: generatePremiumQuestion(progress, spacedSession)
   });
 }
 
@@ -133,6 +141,7 @@ function updatePremiumSession(session, result, answerDetails, responseMs, feedba
     currentFeedback: feedback,
     flowers: session.flowers + (session.modeId === "garden" && result.isCorrect ? 1 : 0),
     snacks: session.snacks + (session.modeId === "mascot-snack" && result.isCorrect ? 1 : 0),
+    charms: session.charms + (session.modeId === MAGIC_BRACELETS_MODE_ID && result.isCorrect ? 1 : 0),
     answers: [...session.answers, buildAnswerRecord(session, result, answerDetails, responseMs)]
   };
 
@@ -151,16 +160,64 @@ function buildAnswerRecord(session, result, answerDetails, responseMs) {
 }
 
 function generatePremiumQuestion(progress, session) {
-  const factId = session.factQueue[session.currentIndex]?.id;
+  const fact = session.factQueue[session.currentIndex];
+
+  if (session.modeId === MAGIC_BRACELETS_MODE_ID) {
+    return createMagicBraceletsQuestion(fact, session.currentIndex);
+  }
+
   return generateMultiplicationQuestion(progress, {
     mode: getQuestionMode(session.modeId, session.currentIndex),
-    factId
+    factId: fact?.id,
+    choiceVariant: session.currentIndex
   });
 }
 
-function buildFactQueue(progress, modeId, totalQuestions) {
+function preventThirdRepeat(session) {
+  const factId = session.factQueue[session.currentIndex]?.id;
+
+  if (!wouldRepeatFactThreeTimes(session, factId)) {
+    return session;
+  }
+
+  const alternative = findAlternativeFact(session, session.currentIndex);
+  return alternative.index >= 0
+    ? swapQueuedFact(session, session.currentIndex, alternative.index)
+    : session;
+}
+
+function wouldRepeatFactThreeTimes(session, factId) {
+  const recentFacts = (session.answers || []).slice(-2).map((answer) => answer.factId);
+  return Boolean(factId) &&
+    recentFacts.length === 2 &&
+    recentFacts.every((recentFactId) => recentFactId === factId);
+}
+
+function findAlternativeFact(session, nextIndex) {
+  const factQueue = session.factQueue || [];
+
+  for (let offset = 1; offset <= factQueue.length; offset += 1) {
+    const index = (nextIndex + offset) % factQueue.length;
+    const factId = factQueue[index]?.id;
+
+    if (index !== nextIndex && factId && !wouldRepeatFactThreeTimes(session, factId)) {
+      return { index, factId };
+    }
+  }
+
+  return { index: -1, factId: null };
+}
+
+function swapQueuedFact(session, firstIndex, secondIndex) {
+  const factQueue = [...(session.factQueue || [])];
+  [factQueue[firstIndex], factQueue[secondIndex]] = [factQueue[secondIndex], factQueue[firstIndex]];
+
+  return { ...session, factQueue };
+}
+
+function buildFactQueue(progress, modeId, packFamily, totalQuestions) {
   if (!["smart-review", "anti-forget", "clever-mix"].includes(modeId)) {
-    return [];
+    return buildPracticeQueue(progress, { count: totalQuestions, modeId, packFamily });
   }
 
   const selectedFacts = selectScienceFacts(progress, modeId, { count: totalQuestions });
@@ -170,6 +227,10 @@ function buildFactQueue(progress, modeId, totalQuestions) {
 }
 
 function getQuestionMode(modeId, index) {
+  if (modeId === MAGIC_BRACELETS_MODE_ID) {
+    return QUESTION_MODES.visualGroups;
+  }
+
   if (modeId === "speed-60") {
     return [QUESTION_MODES.directAnswer, QUESTION_MODES.multipleChoice][index % 2];
   }
@@ -182,6 +243,10 @@ function getQuestionMode(modeId, index) {
 }
 
 function createPremiumFeedback(session, answerDetails, isCorrect) {
+  if (session.modeId === MAGIC_BRACELETS_MODE_ID) {
+    return createMagicBraceletsFeedback(session.currentQuestion, answerDetails, isCorrect);
+  }
+
   const feedback = createMultiplicationFeedback(session.currentQuestion, answerDetails);
 
   if (!isCorrect) {
